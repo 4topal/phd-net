@@ -1,0 +1,2173 @@
+{
+  "experiment": "D2 — HER Sıkıştırma Dayanıklılığı ve Gerçek/Sahte Ayrışma Testi",
+  "methodological_note": "Bu deney, yerel diskte yalnızca FaceForensics++ C23 bulunduğu için C23 videolarının ffmpeg libx264 ile CRF {0, 18, 23, 32, 40} seviyelerinde yeniden kodlanmasına dayalı bir CRF yaklaşımıdır (proxy). Sıkıştırılmamış ham kaynaktan üretilmiş resmi FF++ C0 (RAW) ve C40 veri setleri değildir.",
+  "dct_band_config": {
+    "low_band": "1 <= u+v <= 3 (DC hariç)",
+    "mid_band": "4 <= u+v <= 8",
+    "high_band": "9 <= u+v <= 14"
+  },
+  "crfs_tested": [
+    0,
+    18,
+    23,
+    32,
+    40
+  ],
+  "core_crfs_for_cv": [
+    0,
+    23,
+    40
+  ],
+  "group_summaries": {
+    "original": {
+      "num_videos": 5,
+      "mean_her_cv_percent_crf_0_23_40": 7.321,
+      "min_max_her_cv_percent_crf_0_23_40": [
+        4.385,
+        13.502
+      ],
+      "mean_raw_mid_energy_cv_percent": 12.346,
+      "mean_raw_high_energy_cv_percent": 8.064,
+      "mean_hfer_cv_percent": 4.323,
+      "mean_her_rel_change_crf0_to_crf23_percent": -1.233,
+      "mean_her_rel_change_crf0_to_crf40_percent": -15.084,
+      "her_by_level": {
+        "source_c23": {
+          "mean": 0.416417,
+          "std": 0.022063
+        },
+        "crf_0": {
+          "mean": 0.421449,
+          "std": 0.01741
+        },
+        "crf_18": {
+          "mean": 0.423862,
+          "std": 0.016695
+        },
+        "crf_23": {
+          "mean": 0.416223,
+          "std": 0.017055
+        },
+        "crf_32": {
+          "mean": 0.392786,
+          "std": 0.016252
+        },
+        "crf_40": {
+          "mean": 0.357442,
+          "std": 0.027515
+        }
+      }
+    },
+    "Deepfakes": {
+      "num_videos": 5,
+      "mean_her_cv_percent_crf_0_23_40": 6.3,
+      "min_max_her_cv_percent_crf_0_23_40": [
+        3.575,
+        10.992
+      ],
+      "mean_raw_mid_energy_cv_percent": 11.185,
+      "mean_raw_high_energy_cv_percent": 6.616,
+      "mean_hfer_cv_percent": 4.1,
+      "mean_her_rel_change_crf0_to_crf23_percent": -1.42,
+      "mean_her_rel_change_crf0_to_crf40_percent": -13.233,
+      "her_by_level": {
+        "source_c23": {
+          "mean": 0.404535,
+          "std": 0.019572
+        },
+        "crf_0": {
+          "mean": 0.409287,
+          "std": 0.015363
+        },
+        "crf_18": {
+          "mean": 0.411031,
+          "std": 0.017381
+        },
+        "crf_23": {
+          "mean": 0.403585,
+          "std": 0.019063
+        },
+        "crf_32": {
+          "mean": 0.383006,
+          "std": 0.022435
+        },
+        "crf_40": {
+          "mean": 0.355414,
+          "std": 0.03158
+        }
+      }
+    },
+    "Face2Face": {
+      "num_videos": 5,
+      "mean_her_cv_percent_crf_0_23_40": 6.9,
+      "min_max_her_cv_percent_crf_0_23_40": [
+        3.896,
+        12.283
+      ],
+      "mean_raw_mid_energy_cv_percent": 11.864,
+      "mean_raw_high_energy_cv_percent": 8.053,
+      "mean_hfer_cv_percent": 4.805,
+      "mean_her_rel_change_crf0_to_crf23_percent": -1.172,
+      "mean_her_rel_change_crf0_to_crf40_percent": -14.296,
+      "her_by_level": {
+        "source_c23": {
+          "mean": 0.414367,
+          "std": 0.020688
+        },
+        "crf_0": {
+          "mean": 0.420197,
+          "std": 0.016873
+        },
+        "crf_18": {
+          "mean": 0.422948,
+          "std": 0.017903
+        },
+        "crf_23": {
+          "mean": 0.415307,
+          "std": 0.017986
+        },
+        "crf_32": {
+          "mean": 0.391045,
+          "std": 0.019073
+        },
+        "crf_40": {
+          "mean": 0.360031,
+          "std": 0.029148
+        }
+      }
+    }
+  },
+  "real_vs_fake_separation": {
+    "source_c23": {
+      "real_mean": 0.416417,
+      "real_std": 0.022063,
+      "deepfakes_mean": 0.404535,
+      "face2face_mean": 0.414367,
+      "all_fake_mean": 0.409451,
+      "all_fake_std": 0.01968,
+      "diff_fake_minus_real": -0.006966,
+      "cohens_d_real_vs_all_fake": -0.3408,
+      "cohens_d_real_vs_deepfakes": -0.5698,
+      "cohens_d_real_vs_face2face": -0.0959
+    },
+    "crf_0": {
+      "real_mean": 0.421449,
+      "real_std": 0.01741,
+      "deepfakes_mean": 0.409287,
+      "face2face_mean": 0.420197,
+      "all_fake_mean": 0.414742,
+      "all_fake_std": 0.016263,
+      "diff_fake_minus_real": -0.006707,
+      "cohens_d_real_vs_all_fake": -0.4034,
+      "cohens_d_real_vs_deepfakes": -0.7407,
+      "cohens_d_real_vs_face2face": -0.073
+    },
+    "crf_18": {
+      "real_mean": 0.423862,
+      "real_std": 0.016695,
+      "deepfakes_mean": 0.411031,
+      "face2face_mean": 0.422948,
+      "all_fake_mean": 0.41699,
+      "all_fake_std": 0.017781,
+      "diff_fake_minus_real": -0.006872,
+      "cohens_d_real_vs_all_fake": -0.3937,
+      "cohens_d_real_vs_deepfakes": -0.7529,
+      "cohens_d_real_vs_face2face": -0.0528
+    },
+    "crf_23": {
+      "real_mean": 0.416223,
+      "real_std": 0.017055,
+      "deepfakes_mean": 0.403585,
+      "face2face_mean": 0.415307,
+      "all_fake_mean": 0.409446,
+      "all_fake_std": 0.018533,
+      "diff_fake_minus_real": -0.006777,
+      "cohens_d_real_vs_all_fake": -0.3746,
+      "cohens_d_real_vs_deepfakes": -0.6987,
+      "cohens_d_real_vs_face2face": -0.0523
+    },
+    "crf_32": {
+      "real_mean": 0.392786,
+      "real_std": 0.016252,
+      "deepfakes_mean": 0.383006,
+      "face2face_mean": 0.391045,
+      "all_fake_mean": 0.387026,
+      "all_fake_std": 0.020083,
+      "diff_fake_minus_real": -0.005761,
+      "cohens_d_real_vs_all_fake": -0.3034,
+      "cohens_d_real_vs_deepfakes": -0.4993,
+      "cohens_d_real_vs_face2face": -0.0983
+    },
+    "crf_40": {
+      "real_mean": 0.357442,
+      "real_std": 0.027515,
+      "deepfakes_mean": 0.355414,
+      "face2face_mean": 0.360031,
+      "all_fake_mean": 0.357723,
+      "all_fake_std": 0.028754,
+      "diff_fake_minus_real": 0.000281,
+      "cohens_d_real_vs_all_fake": 0.0099,
+      "cohens_d_real_vs_deepfakes": -0.0685,
+      "cohens_d_real_vs_face2face": 0.0914
+    }
+  },
+  "per_video_details": {
+    "original": [
+      {
+        "video": "000",
+        "source_path": "/home/a/arastirma_problemleri/datasets/ffc32/FaceForensics++_C23/original/000.mp4",
+        "matched_frame_indices": [
+          0,
+          15,
+          30,
+          45,
+          60,
+          75,
+          90,
+          105
+        ],
+        "num_frames": 8,
+        "levels": {
+          "source_c23": {
+            "her_mean": 0.429074,
+            "her_std_across_frames": 0.0137,
+            "her_per_frame": [
+              0.446151,
+              0.428628,
+              0.425888,
+              0.399643,
+              0.425129,
+              0.433932,
+              0.446117,
+              0.427109
+            ],
+            "low_energy_mean": 2109.9951,
+            "mid_energy_mean": 905.5333,
+            "high_energy_mean": 96.8362,
+            "hfer_mean": 0.045879
+          },
+          "crf_0": {
+            "her_mean": 0.432504,
+            "her_std_across_frames": 0.015157,
+            "her_per_frame": [
+              0.449674,
+              0.432642,
+              0.430269,
+              0.401266,
+              0.426926,
+              0.437676,
+              0.449077
+            ],
+            "low_energy_mean": 2106.2302,
+            "mid_energy_mean": 911.2009,
+            "high_energy_mean": 94.5065,
+            "hfer_mean": 0.044847
+          },
+          "crf_18": {
+            "her_mean": 0.431074,
+            "her_std_across_frames": 0.014519,
+            "her_per_frame": [
+              0.456868,
+              0.439309,
+              0.429799,
+              0.405671,
+              0.423671,
+              0.435609,
+              0.426588
+            ],
+            "low_energy_mean": 2099.1995,
+            "mid_energy_mean": 905.1884,
+            "high_energy_mean": 92.3161,
+            "hfer_mean": 0.043968
+          },
+          "crf_23": {
+            "her_mean": 0.42007,
+            "her_std_across_frames": 0.014972,
+            "her_per_frame": [
+              0.448541,
+              0.429174,
+              0.422424,
+              0.39693,
+              0.41155,
+              0.419665,
+              0.412207
+            ],
+            "low_energy_mean": 2088.5686,
+            "mid_energy_mean": 877.7794,
+            "high_energy_mean": 89.2718,
+            "hfer_mean": 0.042719
+          },
+          "crf_32": {
+            "her_mean": 0.380737,
+            "her_std_across_frames": 0.017971,
+            "her_per_frame": [
+              0.418217,
+              0.388847,
+              0.382215,
+              0.362959,
+              0.373396,
+              0.379172,
+              0.360352
+            ],
+            "low_energy_mean": 2023.245,
+            "mid_energy_mean": 770.9345,
+            "high_energy_mean": 81.3467,
+            "hfer_mean": 0.040174
+          },
+          "crf_40": {
+            "her_mean": 0.315308,
+            "her_std_across_frames": 0.020261,
+            "her_per_frame": [
+              0.352847,
+              0.320391,
+              0.332671,
+              0.298419,
+              0.311367,
+              0.30164,
+              0.28982
+            ],
+            "low_energy_mean": 1875.6357,
+            "mid_energy_mean": 592.5887,
+            "high_energy_mean": 69.377,
+            "hfer_mean": 0.03696
+          }
+        },
+        "variation_summary": {
+          "her_cv_percent_crf_0_23_40": 13.502,
+          "her_cv_percent_all_5_crfs": 11.231,
+          "mid_energy_cv_percent_crf_0_23_40": 18.01,
+          "high_energy_cv_percent_crf_0_23_40": 12.829,
+          "hfer_high_over_low_cv_percent_crf_0_23_40": 8.026,
+          "her_rel_change_crf0_to_crf23_percent": -2.875,
+          "her_rel_change_crf0_to_crf40_percent": -27.097
+        }
+      },
+      {
+        "video": "001",
+        "source_path": "/home/a/arastirma_problemleri/datasets/ffc32/FaceForensics++_C23/original/001.mp4",
+        "matched_frame_indices": [
+          0,
+          15,
+          30,
+          45,
+          60,
+          75,
+          90,
+          105
+        ],
+        "num_frames": 8,
+        "levels": {
+          "source_c23": {
+            "her_mean": 0.422363,
+            "her_std_across_frames": 0.013388,
+            "her_per_frame": [
+              0.416896,
+              0.429805,
+              0.411105,
+              0.436593,
+              0.42935,
+              0.443015,
+              0.403508,
+              0.408634
+            ],
+            "low_energy_mean": 2154.8433,
+            "mid_energy_mean": 910.0343,
+            "high_energy_mean": 112.7131,
+            "hfer_mean": 0.052356
+          },
+          "crf_0": {
+            "her_mean": 0.425284,
+            "her_std_across_frames": 0.013018,
+            "her_per_frame": [
+              0.418504,
+              0.430669,
+              0.412086,
+              0.438154,
+              0.429651,
+              0.443312,
+              0.404611
+            ],
+            "low_energy_mean": 2161.752,
+            "mid_energy_mean": 919.1804,
+            "high_energy_mean": 111.0542,
+            "hfer_mean": 0.051419
+          },
+          "crf_18": {
+            "her_mean": 0.431872,
+            "her_std_across_frames": 0.012428,
+            "her_per_frame": [
+              0.423849,
+              0.442224,
+              0.4189,
+              0.446182,
+              0.438081,
+              0.441924,
+              0.411948
+            ],
+            "low_energy_mean": 2159.0647,
+            "mid_energy_mean": 932.2931,
+            "high_energy_mean": 116.1415,
+            "hfer_mean": 0.053836
+          },
+          "crf_23": {
+            "her_mean": 0.42688,
+            "her_std_across_frames": 0.01191,
+            "her_per_frame": [
+              0.4196,
+              0.435757,
+              0.414441,
+              0.439055,
+              0.433811,
+              0.438173,
+              0.407321
+            ],
+            "low_energy_mean": 2149.2261,
+            "mid_energy_mean": 917.3431,
+            "high_energy_mean": 111.9438,
+            "hfer_mean": 0.052131
+          },
+          "crf_32": {
+            "her_mean": 0.413205,
+            "her_std_across_frames": 0.013001,
+            "her_per_frame": [
+              0.410065,
+              0.422131,
+              0.390481,
+              0.420929,
+              0.421929,
+              0.428306,
+              0.398595
+            ],
+            "low_energy_mean": 2096.6665,
+            "mid_energy_mean": 866.5023,
+            "high_energy_mean": 108.2946,
+            "hfer_mean": 0.051653
+          },
+          "crf_40": {
+            "her_mean": 0.38766,
+            "her_std_across_frames": 0.013809,
+            "her_per_frame": [
+              0.398206,
+              0.397775,
+              0.357124,
+              0.390109,
+              0.398837,
+              0.390832,
+              0.380739
+            ],
+            "low_energy_mean": 1961.5879,
+            "mid_energy_mean": 761.1569,
+            "high_energy_mean": 102.927,
+            "hfer_mean": 0.052477
+          }
+        },
+        "variation_summary": {
+          "her_cv_percent_crf_0_23_40": 4.385,
+          "her_cv_percent_all_5_crfs": 3.811,
+          "mid_energy_cv_percent_crf_0_23_40": 8.553,
+          "high_energy_cv_percent_crf_0_23_40": 3.734,
+          "hfer_high_over_low_cv_percent_crf_0_23_40": 0.847,
+          "her_rel_change_crf0_to_crf23_percent": 0.375,
+          "her_rel_change_crf0_to_crf40_percent": -8.847
+        }
+      },
+      {
+        "video": "002",
+        "source_path": "/home/a/arastirma_problemleri/datasets/ffc32/FaceForensics++_C23/original/002.mp4",
+        "matched_frame_indices": [
+          0,
+          15,
+          30,
+          45,
+          60,
+          75,
+          90,
+          105
+        ],
+        "num_frames": 8,
+        "levels": {
+          "source_c23": {
+            "her_mean": 0.443153,
+            "her_std_across_frames": 0.00859,
+            "her_per_frame": [
+              0.43157,
+              0.451866,
+              0.439636,
+              0.443084,
+              0.452376,
+              0.438605,
+              0.455456,
+              0.432629
+            ],
+            "low_energy_mean": 2166.0669,
+            "mid_energy_mean": 959.7654,
+            "high_energy_mean": 141.7307,
+            "hfer_mean": 0.065447
+          },
+          "crf_0": {
+            "her_mean": 0.441746,
+            "her_std_across_frames": 0.008382,
+            "her_per_frame": [
+              0.430485,
+              0.450426,
+              0.438276,
+              0.442012,
+              0.450935,
+              0.437339,
+              0.45328,
+              0.431214
+            ],
+            "low_energy_mean": 2166.8259,
+            "mid_energy_mean": 957.0537,
+            "high_energy_mean": 140.8549,
+            "hfer_mean": 0.065019
+          },
+          "crf_18": {
+            "her_mean": 0.443278,
+            "her_std_across_frames": 0.008291,
+            "her_per_frame": [
+              0.43519,
+              0.45215,
+              0.441587,
+              0.437159,
+              0.452605,
+              0.439051,
+              0.45562,
+              0.432867
+            ],
+            "low_energy_mean": 2161.9695,
+            "mid_energy_mean": 958.2131,
+            "high_energy_mean": 143.7457,
+            "hfer_mean": 0.066504
+          },
+          "crf_23": {
+            "her_mean": 0.436456,
+            "her_std_across_frames": 0.008919,
+            "her_per_frame": [
+              0.432171,
+              0.447359,
+              0.429716,
+              0.432458,
+              0.446592,
+              0.431512,
+              0.448368,
+              0.42347
+            ],
+            "low_energy_mean": 2152.6257,
+            "mid_energy_mean": 939.3214,
+            "high_energy_mean": 137.7592,
+            "hfer_mean": 0.064011
+          },
+          "crf_32": {
+            "her_mean": 0.407364,
+            "her_std_across_frames": 0.00892,
+            "her_per_frame": [
+              0.412765,
+              0.415953,
+              0.397453,
+              0.40274,
+              0.414783,
+              0.405864,
+              0.41776,
+              0.391597
+            ],
+            "low_energy_mean": 2111.4214,
+            "mid_energy_mean": 859.9364,
+            "high_energy_mean": 121.9766,
+            "hfer_mean": 0.057771
+          },
+          "crf_40": {
+            "her_mean": 0.375378,
+            "her_std_across_frames": 0.012091,
+            "her_per_frame": [
+              0.38014,
+              0.37727,
+              0.359017,
+              0.368592,
+              0.387912,
+              0.378243,
+              0.394141,
+              0.357707
+            ],
+            "low_energy_mean": 2029.6283,
+            "mid_energy_mean": 761.8879,
+            "high_energy_mean": 106.3704,
+            "hfer_mean": 0.052386
+          }
+        },
+        "variation_summary": {
+          "her_cv_percent_crf_0_23_40": 7.207,
+          "her_cv_percent_all_5_crfs": 6.226,
+          "mid_energy_cv_percent_crf_0_23_40": 9.945,
+          "high_energy_cv_percent_crf_0_23_40": 12.139,
+          "hfer_high_over_low_cv_percent_crf_0_23_40": 9.48,
+          "her_rel_change_crf0_to_crf23_percent": -1.198,
+          "her_rel_change_crf0_to_crf40_percent": -15.024
+        }
+      },
+      {
+        "video": "003",
+        "source_path": "/home/a/arastirma_problemleri/datasets/ffc32/FaceForensics++_C23/original/003.mp4",
+        "matched_frame_indices": [
+          0,
+          15,
+          30,
+          45,
+          60,
+          75,
+          90,
+          105
+        ],
+        "num_frames": 8,
+        "levels": {
+          "source_c23": {
+            "her_mean": 0.391649,
+            "her_std_across_frames": 0.015837,
+            "her_per_frame": [
+              0.384288,
+              0.355778,
+              0.39478,
+              0.407573,
+              0.406252,
+              0.400679,
+              0.3846,
+              0.399246
+            ],
+            "low_energy_mean": 1274.3145,
+            "mid_energy_mean": 499.8275,
+            "high_energy_mean": 64.1128,
+            "hfer_mean": 0.050311
+          },
+          "crf_0": {
+            "her_mean": 0.39914,
+            "her_std_across_frames": 0.016058,
+            "her_per_frame": [
+              0.394023,
+              0.365006,
+              0.404579,
+              0.416812,
+              0.412374,
+              0.407397,
+              0.393793
+            ],
+            "low_energy_mean": 1269.4237,
+            "mid_energy_mean": 507.4366,
+            "high_energy_mean": 61.6123,
+            "hfer_mean": 0.048517
+          },
+          "crf_18": {
+            "her_mean": 0.403243,
+            "her_std_across_frames": 0.01307,
+            "her_per_frame": [
+              0.401813,
+              0.377405,
+              0.406039,
+              0.400766,
+              0.418253,
+              0.419594,
+              0.398832
+            ],
+            "low_energy_mean": 1263.6903,
+            "mid_energy_mean": 510.2883,
+            "high_energy_mean": 62.3656,
+            "hfer_mean": 0.049366
+          },
+          "crf_23": {
+            "her_mean": 0.395506,
+            "her_std_across_frames": 0.01251,
+            "her_per_frame": [
+              0.393287,
+              0.371831,
+              0.399371,
+              0.390429,
+              0.410267,
+              0.411559,
+              0.391794
+            ],
+            "low_energy_mean": 1250.788,
+            "mid_energy_mean": 495.339,
+            "high_energy_mean": 60.8548,
+            "hfer_mean": 0.04867
+          },
+          "crf_32": {
+            "her_mean": 0.378259,
+            "her_std_across_frames": 0.01085,
+            "her_per_frame": [
+              0.379383,
+              0.370333,
+              0.391845,
+              0.360071,
+              0.376855,
+              0.393623,
+              0.375702
+            ],
+            "low_energy_mean": 1187.6006,
+            "mid_energy_mean": 449.5654,
+            "high_energy_mean": 57.8611,
+            "hfer_mean": 0.048743
+          },
+          "crf_40": {
+            "her_mean": 0.354461,
+            "her_std_across_frames": 0.008163,
+            "her_per_frame": [
+              0.355525,
+              0.349561,
+              0.372719,
+              0.347555,
+              0.348093,
+              0.356974,
+              0.350802
+            ],
+            "low_energy_mean": 1056.9515,
+            "mid_energy_mean": 374.8073,
+            "high_energy_mean": 54.1339,
+            "hfer_mean": 0.051285
+          }
+        },
+        "variation_summary": {
+          "her_cv_percent_crf_0_23_40": 5.289,
+          "her_cv_percent_all_5_crfs": 4.654,
+          "mid_energy_cv_percent_crf_0_23_40": 13.039,
+          "high_energy_cv_percent_crf_0_23_40": 5.71,
+          "hfer_high_over_low_cv_percent_crf_0_23_40": 2.567,
+          "her_rel_change_crf0_to_crf23_percent": -0.91,
+          "her_rel_change_crf0_to_crf40_percent": -11.194
+        }
+      },
+      {
+        "video": "004",
+        "source_path": "/home/a/arastirma_problemleri/datasets/ffc32/FaceForensics++_C23/original/004.mp4",
+        "matched_frame_indices": [
+          0,
+          15,
+          30,
+          45,
+          60,
+          75,
+          90,
+          105
+        ],
+        "num_frames": 8,
+        "levels": {
+          "source_c23": {
+            "her_mean": 0.395845,
+            "her_std_across_frames": 0.016181,
+            "her_per_frame": [
+              0.383209,
+              0.390011,
+              0.399191,
+              0.395883,
+              0.412713,
+              0.41426,
+              0.408788,
+              0.362702
+            ],
+            "low_energy_mean": 1675.6851,
+            "mid_energy_mean": 663.9021,
+            "high_energy_mean": 89.3509,
+            "hfer_mean": 0.053342
+          },
+          "crf_0": {
+            "her_mean": 0.40857,
+            "her_std_across_frames": 0.010249,
+            "her_per_frame": [
+              0.392531,
+              0.399702,
+              0.407932,
+              0.402129,
+              0.421176,
+              0.420585,
+              0.415938
+            ],
+            "low_energy_mean": 1686.9001,
+            "mid_energy_mean": 689.4328,
+            "high_energy_mean": 86.1026,
+            "hfer_mean": 0.051067
+          },
+          "crf_18": {
+            "her_mean": 0.409841,
+            "her_std_across_frames": 0.008447,
+            "her_per_frame": [
+              0.40406,
+              0.399233,
+              0.418662,
+              0.39825,
+              0.419731,
+              0.413932,
+              0.415019
+            ],
+            "low_energy_mean": 1680.3246,
+            "mid_energy_mean": 688.7565,
+            "high_energy_mean": 86.6336,
+            "hfer_mean": 0.051598
+          },
+          "crf_23": {
+            "her_mean": 0.402203,
+            "her_std_across_frames": 0.009049,
+            "her_per_frame": [
+              0.394149,
+              0.390875,
+              0.408781,
+              0.391571,
+              0.414354,
+              0.405369,
+              0.410325
+            ],
+            "low_energy_mean": 1665.7502,
+            "mid_energy_mean": 670.0844,
+            "high_energy_mean": 83.9731,
+            "hfer_mean": 0.050443
+          },
+          "crf_32": {
+            "her_mean": 0.384367,
+            "her_std_across_frames": 0.013971,
+            "her_per_frame": [
+              0.380444,
+              0.362547,
+              0.392935,
+              0.370554,
+              0.408428,
+              0.385863,
+              0.389801
+            ],
+            "low_energy_mean": 1602.1996,
+            "mid_energy_mean": 616.0355,
+            "high_energy_mean": 80.6332,
+            "hfer_mean": 0.050379
+          },
+          "crf_40": {
+            "her_mean": 0.354403,
+            "her_std_across_frames": 0.011086,
+            "her_per_frame": [
+              0.354338,
+              0.340041,
+              0.363587,
+              0.347112,
+              0.376113,
+              0.351078,
+              0.348554
+            ],
+            "low_energy_mean": 1464.3108,
+            "mid_energy_mean": 518.8351,
+            "high_energy_mean": 74.9679,
+            "hfer_mean": 0.051278
+          }
+        },
+        "variation_summary": {
+          "her_cv_percent_crf_0_23_40": 6.224,
+          "her_cv_percent_all_5_crfs": 5.315,
+          "mid_energy_cv_percent_crf_0_23_40": 12.181,
+          "high_energy_cv_percent_crf_0_23_40": 5.908,
+          "hfer_high_over_low_cv_percent_crf_0_23_40": 0.696,
+          "her_rel_change_crf0_to_crf23_percent": -1.558,
+          "her_rel_change_crf0_to_crf40_percent": -13.258
+        }
+      }
+    ],
+    "Deepfakes": [
+      {
+        "video": "000_003",
+        "source_path": "/home/a/arastirma_problemleri/datasets/ffc32/FaceForensics++_C23/Deepfakes/000_003.mp4",
+        "matched_frame_indices": [
+          0,
+          15,
+          30,
+          45,
+          60,
+          75,
+          90,
+          105
+        ],
+        "num_frames": 8,
+        "levels": {
+          "source_c23": {
+            "her_mean": 0.4033,
+            "her_std_across_frames": 0.023767,
+            "her_per_frame": [
+              0.44345,
+              0.415175,
+              0.40685,
+              0.375135,
+              0.371576,
+              0.380069,
+              0.421239,
+              0.412904
+            ],
+            "low_energy_mean": 2111.3931,
+            "mid_energy_mean": 851.8425,
+            "high_energy_mean": 93.1246,
+            "hfer_mean": 0.044079
+          },
+          "crf_0": {
+            "her_mean": 0.404541,
+            "her_std_across_frames": 0.025754,
+            "her_per_frame": [
+              0.447436,
+              0.4188,
+              0.409966,
+              0.377251,
+              0.373639,
+              0.381603,
+              0.423094
+            ],
+            "low_energy_mean": 2109.3159,
+            "mid_energy_mean": 853.6128,
+            "high_energy_mean": 90.8162,
+            "hfer_mean": 0.043026
+          },
+          "crf_18": {
+            "her_mean": 0.402746,
+            "her_std_across_frames": 0.027237,
+            "her_per_frame": [
+              0.452834,
+              0.424376,
+              0.409479,
+              0.37265,
+              0.381365,
+              0.374357,
+              0.404164
+            ],
+            "low_energy_mean": 2102.4062,
+            "mid_energy_mean": 847.2086,
+            "high_energy_mean": 90.0799,
+            "hfer_mean": 0.042804
+          },
+          "crf_23": {
+            "her_mean": 0.394036,
+            "her_std_across_frames": 0.027959,
+            "her_per_frame": [
+              0.444936,
+              0.418144,
+              0.404969,
+              0.365165,
+              0.372014,
+              0.365382,
+              0.387644
+            ],
+            "low_energy_mean": 2089.5623,
+            "mid_energy_mean": 823.961,
+            "high_energy_mean": 87.457,
+            "hfer_mean": 0.041806
+          },
+          "crf_32": {
+            "her_mean": 0.361713,
+            "her_std_across_frames": 0.027401,
+            "her_per_frame": [
+              0.418456,
+              0.377492,
+              0.368621,
+              0.340848,
+              0.340519,
+              0.334188,
+              0.351864
+            ],
+            "low_energy_mean": 2024.6643,
+            "mid_energy_mean": 733.0815,
+            "high_energy_mean": 82.3372,
+            "hfer_mean": 0.0406
+          },
+          "crf_40": {
+            "her_mean": 0.313344,
+            "her_std_across_frames": 0.024803,
+            "her_per_frame": [
+              0.367513,
+              0.326051,
+              0.313718,
+              0.295483,
+              0.30265,
+              0.290238,
+              0.297755
+            ],
+            "low_energy_mean": 1889.2318,
+            "mid_energy_mean": 593.0358,
+            "high_energy_mean": 72.4107,
+            "hfer_mean": 0.038252
+          }
+        },
+        "variation_summary": {
+          "her_cv_percent_crf_0_23_40": 10.992,
+          "her_cv_percent_all_5_crfs": 9.217,
+          "mid_energy_cv_percent_crf_0_23_40": 15.39,
+          "high_energy_cv_percent_crf_0_23_40": 9.577,
+          "hfer_high_over_low_cv_percent_crf_0_23_40": 4.936,
+          "her_rel_change_crf0_to_crf23_percent": -2.597,
+          "her_rel_change_crf0_to_crf40_percent": -22.543
+        }
+      },
+      {
+        "video": "001_870",
+        "source_path": "/home/a/arastirma_problemleri/datasets/ffc32/FaceForensics++_C23/Deepfakes/001_870.mp4",
+        "matched_frame_indices": [
+          0,
+          15,
+          30,
+          45,
+          60,
+          75,
+          90,
+          105
+        ],
+        "num_frames": 8,
+        "levels": {
+          "source_c23": {
+            "her_mean": 0.428732,
+            "her_std_across_frames": 0.007855,
+            "her_per_frame": [
+              0.426953,
+              0.439548,
+              0.418348,
+              0.430409,
+              0.426611,
+              0.437408,
+              0.434216,
+              0.416361
+            ],
+            "low_energy_mean": 1925.7292,
+            "mid_energy_mean": 825.8021,
+            "high_energy_mean": 104.8016,
+            "hfer_mean": 0.054447
+          },
+          "crf_0": {
+            "her_mean": 0.431506,
+            "her_std_across_frames": 0.006605,
+            "her_per_frame": [
+              0.4284,
+              0.440929,
+              0.419416,
+              0.431199,
+              0.427981,
+              0.437332,
+              0.435283
+            ],
+            "low_energy_mean": 1933.8531,
+            "mid_energy_mean": 834.5975,
+            "high_energy_mean": 103.5172,
+            "hfer_mean": 0.053547
+          },
+          "crf_18": {
+            "her_mean": 0.437058,
+            "her_std_across_frames": 0.005977,
+            "her_per_frame": [
+              0.434285,
+              0.445472,
+              0.425287,
+              0.434458,
+              0.440471,
+              0.44019,
+              0.439243
+            ],
+            "low_energy_mean": 1930.5234,
+            "mid_energy_mean": 843.8011,
+            "high_energy_mean": 107.0842,
+            "hfer_mean": 0.055515
+          },
+          "crf_23": {
+            "her_mean": 0.432576,
+            "her_std_across_frames": 0.006085,
+            "her_per_frame": [
+              0.428958,
+              0.441022,
+              0.420686,
+              0.431313,
+              0.433447,
+              0.435032,
+              0.437574
+            ],
+            "low_energy_mean": 1920.1455,
+            "mid_energy_mean": 830.6757,
+            "high_energy_mean": 103.6009,
+            "hfer_mean": 0.053989
+          },
+          "crf_32": {
+            "her_mean": 0.418833,
+            "her_std_across_frames": 0.007358,
+            "her_per_frame": [
+              0.414922,
+              0.422387,
+              0.402928,
+              0.418445,
+              0.424006,
+              0.422947,
+              0.426197
+            ],
+            "low_energy_mean": 1868.9329,
+            "mid_energy_mean": 782.8344,
+            "high_energy_mean": 100.0384,
+            "hfer_mean": 0.05354
+          },
+          "crf_40": {
+            "her_mean": 0.4001,
+            "her_std_across_frames": 0.009513,
+            "her_per_frame": [
+              0.396745,
+              0.402818,
+              0.37995,
+              0.405127,
+              0.407705,
+              0.39738,
+              0.410978
+            ],
+            "low_energy_mean": 1746.024,
+            "mid_energy_mean": 698.7455,
+            "high_energy_mean": 97.2959,
+            "hfer_mean": 0.055747
+          }
+        },
+        "variation_summary": {
+          "her_cv_percent_crf_0_23_40": 3.575,
+          "her_cv_percent_all_5_crfs": 3.161,
+          "mid_energy_cv_percent_crf_0_23_40": 8.012,
+          "high_energy_cv_percent_crf_0_23_40": 2.91,
+          "hfer_high_over_low_cv_percent_crf_0_23_40": 1.746,
+          "her_rel_change_crf0_to_crf23_percent": 0.248,
+          "her_rel_change_crf0_to_crf40_percent": -7.278
+        }
+      },
+      {
+        "video": "002_006",
+        "source_path": "/home/a/arastirma_problemleri/datasets/ffc32/FaceForensics++_C23/Deepfakes/002_006.mp4",
+        "matched_frame_indices": [
+          0,
+          15,
+          30,
+          45,
+          60,
+          75,
+          90,
+          105
+        ],
+        "num_frames": 8,
+        "levels": {
+          "source_c23": {
+            "her_mean": 0.418865,
+            "her_std_across_frames": 0.008663,
+            "her_per_frame": [
+              0.410318,
+              0.427838,
+              0.419159,
+              0.432674,
+              0.420837,
+              0.410401,
+              0.423457,
+              0.406236
+            ],
+            "low_energy_mean": 2154.4019,
+            "mid_energy_mean": 902.3662,
+            "high_energy_mean": 136.12,
+            "hfer_mean": 0.063205
+          },
+          "crf_0": {
+            "her_mean": 0.417818,
+            "her_std_across_frames": 0.00844,
+            "her_per_frame": [
+              0.409701,
+              0.426857,
+              0.418631,
+              0.430741,
+              0.419875,
+              0.409683,
+              0.422112,
+              0.404945
+            ],
+            "low_energy_mean": 2154.7451,
+            "mid_energy_mean": 900.2463,
+            "high_energy_mean": 135.368,
+            "hfer_mean": 0.062846
+          },
+          "crf_18": {
+            "her_mean": 0.420324,
+            "her_std_across_frames": 0.007933,
+            "her_per_frame": [
+              0.414964,
+              0.426506,
+              0.420014,
+              0.432424,
+              0.424383,
+              0.412543,
+              0.425191,
+              0.406567
+            ],
+            "low_energy_mean": 2150.0435,
+            "mid_energy_mean": 903.652,
+            "high_energy_mean": 139.1311,
+            "hfer_mean": 0.064726
+          },
+          "crf_23": {
+            "her_mean": 0.413294,
+            "her_std_across_frames": 0.008338,
+            "her_per_frame": [
+              0.411701,
+              0.421349,
+              0.41236,
+              0.424561,
+              0.414553,
+              0.405591,
+              0.419219,
+              0.397017
+            ],
+            "low_energy_mean": 2142.6387,
+            "mid_energy_mean": 885.5133,
+            "high_energy_mean": 133.4974,
+            "hfer_mean": 0.062327
+          },
+          "crf_32": {
+            "her_mean": 0.389196,
+            "her_std_across_frames": 0.011379,
+            "her_per_frame": [
+              0.398429,
+              0.403028,
+              0.384855,
+              0.397283,
+              0.388905,
+              0.381943,
+              0.394337,
+              0.364784
+            ],
+            "low_energy_mean": 2104.6313,
+            "mid_energy_mean": 819.0688,
+            "high_energy_mean": 118.1876,
+            "hfer_mean": 0.056172
+          },
+          "crf_40": {
+            "her_mean": 0.363667,
+            "her_std_across_frames": 0.012221,
+            "her_per_frame": [
+              0.368505,
+              0.382011,
+              0.358677,
+              0.367747,
+              0.365553,
+              0.354826,
+              0.373249,
+              0.338771
+            ],
+            "low_energy_mean": 2037.0812,
+            "mid_energy_mean": 740.943,
+            "high_energy_mean": 104.9978,
+            "hfer_mean": 0.051544
+          }
+        },
+        "variation_summary": {
+          "her_cv_percent_crf_0_23_40": 6.159,
+          "her_cv_percent_all_5_crfs": 5.397,
+          "mid_energy_cv_percent_crf_0_23_40": 8.534,
+          "high_energy_cv_percent_crf_0_23_40": 11.151,
+          "hfer_high_over_low_cv_percent_crf_0_23_40": 8.844,
+          "her_rel_change_crf0_to_crf23_percent": -1.083,
+          "her_rel_change_crf0_to_crf40_percent": -12.96
+        }
+      },
+      {
+        "video": "003_000",
+        "source_path": "/home/a/arastirma_problemleri/datasets/ffc32/FaceForensics++_C23/Deepfakes/003_000.mp4",
+        "matched_frame_indices": [
+          0,
+          15,
+          30,
+          45,
+          60,
+          75,
+          90,
+          105
+        ],
+        "num_frames": 8,
+        "levels": {
+          "source_c23": {
+            "her_mean": 0.390606,
+            "her_std_across_frames": 0.02359,
+            "her_per_frame": [
+              0.384142,
+              0.336425,
+              0.399386,
+              0.40886,
+              0.414029,
+              0.400208,
+              0.376351,
+              0.405449
+            ],
+            "low_energy_mean": 1191.6599,
+            "mid_energy_mean": 466.3212,
+            "high_energy_mean": 61.9956,
+            "hfer_mean": 0.051989
+          },
+          "crf_0": {
+            "her_mean": 0.399199,
+            "her_std_across_frames": 0.023119,
+            "her_per_frame": [
+              0.396132,
+              0.349513,
+              0.411142,
+              0.418029,
+              0.422584,
+              0.408941,
+              0.388052
+            ],
+            "low_energy_mean": 1184.3251,
+            "mid_energy_mean": 473.5691,
+            "high_energy_mean": 58.5798,
+            "hfer_mean": 0.049427
+          },
+          "crf_18": {
+            "her_mean": 0.399818,
+            "her_std_across_frames": 0.024882,
+            "her_per_frame": [
+              0.405696,
+              0.347729,
+              0.413019,
+              0.405626,
+              0.422883,
+              0.422348,
+              0.381426
+            ],
+            "low_energy_mean": 1179.1843,
+            "mid_energy_mean": 472.2727,
+            "high_energy_mean": 58.8753,
+            "hfer_mean": 0.049901
+          },
+          "crf_23": {
+            "her_mean": 0.39018,
+            "her_std_across_frames": 0.02474,
+            "her_per_frame": [
+              0.395327,
+              0.337834,
+              0.405181,
+              0.392874,
+              0.411949,
+              0.41382,
+              0.374276
+            ],
+            "low_energy_mean": 1167.4152,
+            "mid_energy_mean": 456.2466,
+            "high_energy_mean": 56.8548,
+            "hfer_mean": 0.048667
+          },
+          "crf_32": {
+            "her_mean": 0.376054,
+            "her_std_across_frames": 0.021828,
+            "her_per_frame": [
+              0.379573,
+              0.337597,
+              0.399678,
+              0.367436,
+              0.38992,
+              0.401459,
+              0.356713
+            ],
+            "low_energy_mean": 1108.1666,
+            "mid_energy_mean": 417.2172,
+            "high_energy_mean": 55.3046,
+            "hfer_mean": 0.049873
+          },
+          "crf_40": {
+            "her_mean": 0.35688,
+            "her_std_across_frames": 0.015871,
+            "her_per_frame": [
+              0.36056,
+              0.336938,
+              0.377177,
+              0.339726,
+              0.364396,
+              0.376615,
+              0.342746
+            ],
+            "low_energy_mean": 992.5081,
+            "mid_energy_mean": 354.636,
+            "high_energy_mean": 52.6727,
+            "hfer_mean": 0.053046
+          }
+        },
+        "variation_summary": {
+          "her_cv_percent_crf_0_23_40": 4.763,
+          "her_cv_percent_all_5_crfs": 4.222,
+          "mid_energy_cv_percent_crf_0_23_40": 12.253,
+          "high_energy_cv_percent_crf_0_23_40": 4.426,
+          "hfer_high_over_low_cv_percent_crf_0_23_40": 3.792,
+          "her_rel_change_crf0_to_crf23_percent": -2.259,
+          "her_rel_change_crf0_to_crf40_percent": -10.601
+        }
+      },
+      {
+        "video": "004_982",
+        "source_path": "/home/a/arastirma_problemleri/datasets/ffc32/FaceForensics++_C23/Deepfakes/004_982.mp4",
+        "matched_frame_indices": [
+          0,
+          15,
+          30,
+          45,
+          60,
+          75,
+          90,
+          105
+        ],
+        "num_frames": 8,
+        "levels": {
+          "source_c23": {
+            "her_mean": 0.381172,
+            "her_std_across_frames": 0.019487,
+            "her_per_frame": [
+              0.366605,
+              0.370991,
+              0.380808,
+              0.410182,
+              0.360559,
+              0.406495,
+              0.396579,
+              0.357158
+            ],
+            "low_energy_mean": 1599.2393,
+            "mid_energy_mean": 609.9636,
+            "high_energy_mean": 84.9473,
+            "hfer_mean": 0.053126
+          },
+          "crf_0": {
+            "her_mean": 0.393371,
+            "her_std_across_frames": 0.017295,
+            "her_per_frame": [
+              0.37752,
+              0.381004,
+              0.38977,
+              0.418063,
+              0.369767,
+              0.413075,
+              0.404397
+            ],
+            "low_energy_mean": 1611.1951,
+            "mid_energy_mean": 633.8964,
+            "high_energy_mean": 81.4365,
+            "hfer_mean": 0.050552
+          },
+          "crf_18": {
+            "her_mean": 0.395211,
+            "her_std_across_frames": 0.014355,
+            "her_per_frame": [
+              0.387645,
+              0.382604,
+              0.396152,
+              0.413637,
+              0.371246,
+              0.409145,
+              0.406047
+            ],
+            "low_energy_mean": 1605.6493,
+            "mid_energy_mean": 634.6285,
+            "high_energy_mean": 82.8549,
+            "hfer_mean": 0.051619
+          },
+          "crf_23": {
+            "her_mean": 0.387838,
+            "her_std_across_frames": 0.013815,
+            "her_per_frame": [
+              0.380357,
+              0.375815,
+              0.387135,
+              0.406578,
+              0.365727,
+              0.402532,
+              0.396724
+            ],
+            "low_energy_mean": 1594.463,
+            "mid_energy_mean": 618.4587,
+            "high_energy_mean": 79.8947,
+            "hfer_mean": 0.050126
+          },
+          "crf_32": {
+            "her_mean": 0.369234,
+            "her_std_across_frames": 0.012158,
+            "her_per_frame": [
+              0.365502,
+              0.35292,
+              0.367149,
+              0.385535,
+              0.353423,
+              0.380546,
+              0.379561
+            ],
+            "low_energy_mean": 1527.6885,
+            "mid_energy_mean": 564.1644,
+            "high_energy_mean": 76.8385,
+            "hfer_mean": 0.050311
+          },
+          "crf_40": {
+            "her_mean": 0.343078,
+            "her_std_across_frames": 0.01387,
+            "her_per_frame": [
+              0.330002,
+              0.341296,
+              0.352622,
+              0.357598,
+              0.317391,
+              0.35744,
+              0.345201
+            ],
+            "low_energy_mean": 1407.0996,
+            "mid_energy_mean": 482.8216,
+            "high_energy_mean": 72.4787,
+            "hfer_mean": 0.051559
+          }
+        },
+        "variation_summary": {
+          "her_cv_percent_crf_0_23_40": 6.009,
+          "her_cv_percent_all_5_crfs": 5.195,
+          "mid_energy_cv_percent_crf_0_23_40": 11.735,
+          "high_energy_cv_percent_crf_0_23_40": 5.017,
+          "hfer_high_over_low_cv_percent_crf_0_23_40": 1.184,
+          "her_rel_change_crf0_to_crf23_percent": -1.407,
+          "her_rel_change_crf0_to_crf40_percent": -12.785
+        }
+      }
+    ],
+    "Face2Face": [
+      {
+        "video": "000_003",
+        "source_path": "/home/a/arastirma_problemleri/datasets/ffc32/FaceForensics++_C23/Face2Face/000_003.mp4",
+        "matched_frame_indices": [
+          0,
+          15,
+          30,
+          45,
+          60,
+          75,
+          90,
+          105
+        ],
+        "num_frames": 8,
+        "levels": {
+          "source_c23": {
+            "her_mean": 0.417616,
+            "her_std_across_frames": 0.016689,
+            "her_per_frame": [
+              0.4508,
+              0.422803,
+              0.430584,
+              0.405404,
+              0.39556,
+              0.414742,
+              0.420194,
+              0.400843
+            ],
+            "low_energy_mean": 2043.1488,
+            "mid_energy_mean": 853.4773,
+            "high_energy_mean": 98.8682,
+            "hfer_mean": 0.04837
+          },
+          "crf_0": {
+            "her_mean": 0.423946,
+            "her_std_across_frames": 0.017279,
+            "her_per_frame": [
+              0.456029,
+              0.427901,
+              0.435748,
+              0.408333,
+              0.398981,
+              0.41784,
+              0.422788
+            ],
+            "low_energy_mean": 2043.9821,
+            "mid_energy_mean": 866.8687,
+            "high_energy_mean": 97.8508,
+            "hfer_mean": 0.047838
+          },
+          "crf_18": {
+            "her_mean": 0.425373,
+            "her_std_across_frames": 0.019456,
+            "her_per_frame": [
+              0.461034,
+              0.434672,
+              0.438331,
+              0.401485,
+              0.403549,
+              0.418236,
+              0.420303
+            ],
+            "low_energy_mean": 2039.4772,
+            "mid_energy_mean": 868.0208,
+            "high_energy_mean": 98.2065,
+            "hfer_mean": 0.048114
+          },
+          "crf_23": {
+            "her_mean": 0.414481,
+            "her_std_across_frames": 0.020092,
+            "her_per_frame": [
+              0.453997,
+              0.423945,
+              0.425428,
+              0.393883,
+              0.392624,
+              0.405358,
+              0.406132
+            ],
+            "low_energy_mean": 2027.8691,
+            "mid_energy_mean": 841.0654,
+            "high_energy_mean": 94.8439,
+            "hfer_mean": 0.046733
+          },
+          "crf_32": {
+            "her_mean": 0.376348,
+            "her_std_across_frames": 0.02213,
+            "her_per_frame": [
+              0.421587,
+              0.382806,
+              0.388642,
+              0.351438,
+              0.36182,
+              0.369342,
+              0.3588
+            ],
+            "low_energy_mean": 1967.4257,
+            "mid_energy_mean": 741.1798,
+            "high_energy_mean": 85.8448,
+            "hfer_mean": 0.043577
+          },
+          "crf_40": {
+            "her_mean": 0.319022,
+            "her_std_across_frames": 0.018769,
+            "her_per_frame": [
+              0.359215,
+              0.316502,
+              0.328211,
+              0.300004,
+              0.311497,
+              0.317075,
+              0.300648
+            ],
+            "low_energy_mean": 1853.5129,
+            "mid_energy_mean": 591.8742,
+            "high_energy_mean": 74.7116,
+            "hfer_mean": 0.040277
+          }
+        },
+        "variation_summary": {
+          "her_cv_percent_crf_0_23_40": 12.283,
+          "her_cv_percent_all_5_crfs": 10.342,
+          "mid_energy_cv_percent_crf_0_23_40": 16.175,
+          "high_energy_cv_percent_crf_0_23_40": 11.525,
+          "hfer_high_over_low_cv_percent_crf_0_23_40": 7.418,
+          "her_rel_change_crf0_to_crf23_percent": -2.233,
+          "her_rel_change_crf0_to_crf40_percent": -24.749
+        }
+      },
+      {
+        "video": "001_870",
+        "source_path": "/home/a/arastirma_problemleri/datasets/ffc32/FaceForensics++_C23/Face2Face/001_870.mp4",
+        "matched_frame_indices": [
+          0,
+          15,
+          30,
+          45,
+          60,
+          75,
+          90,
+          105
+        ],
+        "num_frames": 8,
+        "levels": {
+          "source_c23": {
+            "her_mean": 0.42964,
+            "her_std_across_frames": 0.013971,
+            "her_per_frame": [
+              0.428868,
+              0.446257,
+              0.408389,
+              0.450481,
+              0.428027,
+              0.43638,
+              0.42771,
+              0.41101
+            ],
+            "low_energy_mean": 2113.7183,
+            "mid_energy_mean": 907.7891,
+            "high_energy_mean": 113.2305,
+            "hfer_mean": 0.053652
+          },
+          "crf_0": {
+            "her_mean": 0.433116,
+            "her_std_across_frames": 0.01293,
+            "her_per_frame": [
+              0.430813,
+              0.447841,
+              0.409483,
+              0.450963,
+              0.427372,
+              0.43701,
+              0.428329
+            ],
+            "low_energy_mean": 2113.9802,
+            "mid_energy_mean": 915.2491,
+            "high_energy_mean": 111.0978,
+            "hfer_mean": 0.052634
+          },
+          "crf_18": {
+            "her_mean": 0.437429,
+            "her_std_across_frames": 0.011904,
+            "her_per_frame": [
+              0.435332,
+              0.448383,
+              0.415132,
+              0.455247,
+              0.434608,
+              0.441327,
+              0.431974
+            ],
+            "low_energy_mean": 2110.1123,
+            "mid_energy_mean": 922.7079,
+            "high_energy_mean": 114.1915,
+            "hfer_mean": 0.054187
+          },
+          "crf_23": {
+            "her_mean": 0.432252,
+            "her_std_across_frames": 0.012266,
+            "her_per_frame": [
+              0.430675,
+              0.444462,
+              0.408023,
+              0.448955,
+              0.428576,
+              0.435848,
+              0.429224
+            ],
+            "low_energy_mean": 2103.0493,
+            "mid_energy_mean": 908.7824,
+            "high_energy_mean": 110.786,
+            "hfer_mean": 0.052749
+          },
+          "crf_32": {
+            "her_mean": 0.417084,
+            "her_std_across_frames": 0.013135,
+            "her_per_frame": [
+              0.42398,
+              0.429069,
+              0.387609,
+              0.428747,
+              0.419143,
+              0.414386,
+              0.416651
+            ],
+            "low_energy_mean": 2048.0325,
+            "mid_energy_mean": 854.4992,
+            "high_energy_mean": 107.0554,
+            "hfer_mean": 0.052297
+          },
+          "crf_40": {
+            "her_mean": 0.397895,
+            "her_std_across_frames": 0.014805,
+            "her_per_frame": [
+              0.412358,
+              0.396243,
+              0.365158,
+              0.410036,
+              0.404319,
+              0.393048,
+              0.404105
+            ],
+            "low_energy_mean": 1919.4098,
+            "mid_energy_mean": 764.3622,
+            "high_energy_mean": 104.3638,
+            "hfer_mean": 0.054408
+          }
+        },
+        "variation_summary": {
+          "her_cv_percent_crf_0_23_40": 3.896,
+          "her_cv_percent_all_5_crfs": 3.437,
+          "mid_energy_cv_percent_crf_0_23_40": 8.073,
+          "high_energy_cv_percent_crf_0_23_40": 2.854,
+          "hfer_high_over_low_cv_percent_crf_0_23_40": 1.522,
+          "her_rel_change_crf0_to_crf23_percent": -0.199,
+          "her_rel_change_crf0_to_crf40_percent": -8.132
+        }
+      },
+      {
+        "video": "002_006",
+        "source_path": "/home/a/arastirma_problemleri/datasets/ffc32/FaceForensics++_C23/Face2Face/002_006.mp4",
+        "matched_frame_indices": [
+          0,
+          15,
+          30,
+          45,
+          60,
+          75,
+          90,
+          105
+        ],
+        "num_frames": 8,
+        "levels": {
+          "source_c23": {
+            "her_mean": 0.436504,
+            "her_std_across_frames": 0.010802,
+            "her_per_frame": [
+              0.437163,
+              0.437422,
+              0.453054,
+              0.442814,
+              0.442623,
+              0.42767,
+              0.437195,
+              0.414089
+            ],
+            "low_energy_mean": 2157.7422,
+            "mid_energy_mean": 941.6244,
+            "high_energy_mean": 144.1524,
+            "hfer_mean": 0.066816
+          },
+          "crf_0": {
+            "her_mean": 0.435275,
+            "her_std_across_frames": 0.010588,
+            "her_per_frame": [
+              0.436459,
+              0.436384,
+              0.451284,
+              0.440888,
+              0.441724,
+              0.426716,
+              0.435634,
+              0.413107
+            ],
+            "low_energy_mean": 2158.6284,
+            "mid_energy_mean": 939.3616,
+            "high_energy_mean": 143.3383,
+            "hfer_mean": 0.06641
+          },
+          "crf_18": {
+            "her_mean": 0.436307,
+            "her_std_across_frames": 0.011265,
+            "her_per_frame": [
+              0.440883,
+              0.436884,
+              0.452054,
+              0.438114,
+              0.444759,
+              0.428005,
+              0.43794,
+              0.411817
+            ],
+            "low_energy_mean": 2154.0059,
+            "mid_energy_mean": 939.5842,
+            "high_energy_mean": 145.545,
+            "hfer_mean": 0.067573
+          },
+          "crf_23": {
+            "her_mean": 0.429854,
+            "her_std_across_frames": 0.012397,
+            "her_per_frame": [
+              0.43833,
+              0.431853,
+              0.444866,
+              0.431933,
+              0.438967,
+              0.420553,
+              0.429945,
+              0.402386
+            ],
+            "low_energy_mean": 2145.3516,
+            "mid_energy_mean": 921.9615,
+            "high_energy_mean": 140.3183,
+            "hfer_mean": 0.065406
+          },
+          "crf_32": {
+            "her_mean": 0.402312,
+            "her_std_across_frames": 0.013833,
+            "her_per_frame": [
+              0.41792,
+              0.408088,
+              0.413609,
+              0.401534,
+              0.41036,
+              0.392998,
+              0.40288,
+              0.371108
+            ],
+            "low_energy_mean": 2103.386,
+            "mid_energy_mean": 846.0212,
+            "high_energy_mean": 121.619,
+            "hfer_mean": 0.057804
+          },
+          "crf_40": {
+            "her_mean": 0.372852,
+            "her_std_across_frames": 0.013637,
+            "her_per_frame": [
+              0.389342,
+              0.378802,
+              0.372693,
+              0.372434,
+              0.386838,
+              0.366357,
+              0.374173,
+              0.342181
+            ],
+            "low_energy_mean": 2021.0839,
+            "mid_energy_mean": 753.7192,
+            "high_energy_mean": 105.7595,
+            "hfer_mean": 0.052302
+          }
+        },
+        "variation_summary": {
+          "her_cv_percent_crf_0_23_40": 6.842,
+          "her_cv_percent_all_5_crfs": 5.92,
+          "mid_energy_cv_percent_crf_0_23_40": 9.604,
+          "high_energy_cv_percent_crf_0_23_40": 13.133,
+          "hfer_high_over_low_cv_percent_crf_0_23_40": 10.472,
+          "her_rel_change_crf0_to_crf23_percent": -1.245,
+          "her_rel_change_crf0_to_crf40_percent": -14.341
+        }
+      },
+      {
+        "video": "003_000",
+        "source_path": "/home/a/arastirma_problemleri/datasets/ffc32/FaceForensics++_C23/Face2Face/003_000.mp4",
+        "matched_frame_indices": [
+          0,
+          15,
+          30,
+          45,
+          60,
+          75,
+          90,
+          105
+        ],
+        "num_frames": 8,
+        "levels": {
+          "source_c23": {
+            "her_mean": 0.385335,
+            "her_std_across_frames": 0.017109,
+            "her_per_frame": [
+              0.376129,
+              0.358049,
+              0.37148,
+              0.393413,
+              0.401288,
+              0.415755,
+              0.377491,
+              0.389072
+            ],
+            "low_energy_mean": 1216.2784,
+            "mid_energy_mean": 469.0839,
+            "high_energy_mean": 62.2227,
+            "hfer_mean": 0.051155
+          },
+          "crf_0": {
+            "her_mean": 0.39368,
+            "her_std_across_frames": 0.01683,
+            "her_per_frame": [
+              0.387979,
+              0.368493,
+              0.380852,
+              0.400774,
+              0.40896,
+              0.422238,
+              0.386464
+            ],
+            "low_energy_mean": 1210.226,
+            "mid_energy_mean": 476.8472,
+            "high_energy_mean": 59.8225,
+            "hfer_mean": 0.049414
+          },
+          "crf_18": {
+            "her_mean": 0.393151,
+            "her_std_across_frames": 0.015058,
+            "her_per_frame": [
+              0.397053,
+              0.368035,
+              0.378284,
+              0.407044,
+              0.406602,
+              0.409929,
+              0.38511
+            ],
+            "low_energy_mean": 1206.3389,
+            "mid_energy_mean": 474.6572,
+            "high_energy_mean": 59.5379,
+            "hfer_mean": 0.04935
+          },
+          "crf_23": {
+            "her_mean": 0.387238,
+            "her_std_across_frames": 0.014575,
+            "her_per_frame": [
+              0.386686,
+              0.366007,
+              0.374074,
+              0.397293,
+              0.403746,
+              0.406496,
+              0.376366
+            ],
+            "low_energy_mean": 1190.4749,
+            "mid_energy_mean": 461.3503,
+            "high_energy_mean": 57.7401,
+            "hfer_mean": 0.048493
+          },
+          "crf_32": {
+            "her_mean": 0.370291,
+            "her_std_across_frames": 0.012175,
+            "her_per_frame": [
+              0.36267,
+              0.35236,
+              0.37034,
+              0.389859,
+              0.372295,
+              0.383731,
+              0.360782
+            ],
+            "low_energy_mean": 1135.6331,
+            "mid_energy_mean": 420.7646,
+            "high_energy_mean": 55.6186,
+            "hfer_mean": 0.048961
+          },
+          "crf_40": {
+            "her_mean": 0.349201,
+            "her_std_across_frames": 0.0121,
+            "her_per_frame": [
+              0.339088,
+              0.339847,
+              0.369268,
+              0.358345,
+              0.360481,
+              0.339141,
+              0.338234
+            ],
+            "low_energy_mean": 998.0587,
+            "mid_energy_mean": 348.6635,
+            "high_energy_mean": 52.4502,
+            "hfer_mean": 0.052552
+          }
+        },
+        "variation_summary": {
+          "her_cv_percent_crf_0_23_40": 5.21,
+          "her_cv_percent_all_5_crfs": 4.492,
+          "mid_energy_cv_percent_crf_0_23_40": 13.317,
+          "high_energy_cv_percent_crf_0_23_40": 5.476,
+          "hfer_high_over_low_cv_percent_crf_0_23_40": 3.464,
+          "her_rel_change_crf0_to_crf23_percent": -1.636,
+          "her_rel_change_crf0_to_crf40_percent": -11.298
+        }
+      },
+      {
+        "video": "004_982",
+        "source_path": "/home/a/arastirma_problemleri/datasets/ffc32/FaceForensics++_C23/Face2Face/004_982.mp4",
+        "matched_frame_indices": [
+          0,
+          15,
+          30,
+          45,
+          60,
+          75,
+          90,
+          105
+        ],
+        "num_frames": 8,
+        "levels": {
+          "source_c23": {
+            "her_mean": 0.402738,
+            "her_std_across_frames": 0.014683,
+            "her_per_frame": [
+              0.40022,
+              0.385383,
+              0.411726,
+              0.404548,
+              0.415226,
+              0.400024,
+              0.426569,
+              0.378205
+            ],
+            "low_energy_mean": 1604.4208,
+            "mid_energy_mean": 646.0177,
+            "high_energy_mean": 91.0638,
+            "hfer_mean": 0.05677
+          },
+          "crf_0": {
+            "her_mean": 0.414968,
+            "her_std_across_frames": 0.01264,
+            "her_per_frame": [
+              0.410032,
+              0.392983,
+              0.421013,
+              0.413664,
+              0.423112,
+              0.407714,
+              0.436262
+            ],
+            "low_energy_mean": 1608.5355,
+            "mid_energy_mean": 667.2238,
+            "high_energy_mean": 87.6725,
+            "hfer_mean": 0.054523
+          },
+          "crf_18": {
+            "her_mean": 0.422478,
+            "her_std_across_frames": 0.014956,
+            "her_per_frame": [
+              0.422441,
+              0.394993,
+              0.43147,
+              0.415037,
+              0.433528,
+              0.415095,
+              0.444781
+            ],
+            "low_energy_mean": 1605.8978,
+            "mid_energy_mean": 678.151,
+            "high_energy_mean": 90.8174,
+            "hfer_mean": 0.056579
+          },
+          "crf_23": {
+            "her_mean": 0.412708,
+            "her_std_across_frames": 0.014469,
+            "her_per_frame": [
+              0.410788,
+              0.385495,
+              0.421438,
+              0.405988,
+              0.423839,
+              0.407512,
+              0.433899
+            ],
+            "low_energy_mean": 1594.6859,
+            "mid_energy_mean": 657.8495,
+            "high_energy_mean": 87.3378,
+            "hfer_mean": 0.054797
+          },
+          "crf_32": {
+            "her_mean": 0.38919,
+            "her_std_across_frames": 0.01229,
+            "her_per_frame": [
+              0.396553,
+              0.367818,
+              0.399222,
+              0.377578,
+              0.401477,
+              0.382051,
+              0.399629
+            ],
+            "low_energy_mean": 1524.4457,
+            "mid_energy_mean": 593.2669,
+            "high_energy_mean": 80.7741,
+            "hfer_mean": 0.052983
+          },
+          "crf_40": {
+            "her_mean": 0.361187,
+            "her_std_across_frames": 0.01211,
+            "her_per_frame": [
+              0.355756,
+              0.342434,
+              0.374788,
+              0.350848,
+              0.374547,
+              0.356412,
+              0.373523
+            ],
+            "low_energy_mean": 1399.5282,
+            "mid_energy_mean": 505.4687,
+            "high_energy_mean": 74.6614,
+            "hfer_mean": 0.053362
+          }
+        },
+        "variation_summary": {
+          "her_cv_percent_crf_0_23_40": 6.267,
+          "her_cv_percent_all_5_crfs": 5.604,
+          "mid_energy_cv_percent_crf_0_23_40": 12.151,
+          "high_energy_cv_percent_crf_0_23_40": 7.277,
+          "hfer_high_over_low_cv_percent_crf_0_23_40": 1.147,
+          "her_rel_change_crf0_to_crf23_percent": -0.545,
+          "her_rel_change_crf0_to_crf40_percent": -12.96
+        }
+      }
+    ]
+  },
+  "figure_path": "/home/a/arastirma_problemleri/kod/outputs/figures/d2_her_crf_analysis.png"
+}

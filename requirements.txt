@@ -1,0 +1,13 @@
+# Baz imaj: docker.io/pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime
+# Not: Aşağıdaki tüm paketler baz imaj içinde bu sürümlerle halihazırda kuruludur;
+# çalışma zamanında ağ erişimi veya ek pip kurulumu gerekmez.
+# Temiz bir Python 3.11 ortamında yeniden kurulum gerekirse sabit sürümler:
+# torch==2.5.1+cu124
+# torchvision==0.20.1+cu124
+numpy==2.1.2
+scipy==1.17.1
+opencv-python-headless==5.0.0.93
+matplotlib==3.11.2
+pillow==10.2.0
+tqdm==4.66.5
+PyYAML==6.0.2

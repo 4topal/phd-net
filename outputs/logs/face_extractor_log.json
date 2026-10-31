@@ -1,0 +1,217 @@
+{
+  "data_dir": "../datasets/celebdf/Celeb-synthesis",
+  "output_dir": "data/processed_faces/celeb_synthesis",
+  "detector": "OpenCV FaceDetectorYN (face_detection_yunet_2023mar.onnx)",
+  "model_sha256": "8f2383e4dd3cfbb4553ea8718107fc0423210dc964f9f4280604804ed2552fa4",
+  "frame_interval": 30,
+  "margin_ratio": 0.2,
+  "target_size": 224,
+  "videos_processed": 25,
+  "total_sampled_frames": 384,
+  "total_saved_faces": 384,
+  "total_missed_frames": 0,
+  "miss_rate": 0.0,
+  "elapsed_sec": 7.802,
+  "per_video": [
+    {
+      "video_path": "../datasets/celebdf/Celeb-synthesis/id0_id16_0000.mp4",
+      "total_video_frames": 469,
+      "sampled_frames": 16,
+      "saved_faces": 16,
+      "missed_frames": 0,
+      "missed_frame_indices": []
+    },
+    {
+      "video_path": "../datasets/celebdf/Celeb-synthesis/id0_id16_0001.mp4",
+      "total_video_frames": 303,
+      "sampled_frames": 11,
+      "saved_faces": 11,
+      "missed_frames": 0,
+      "missed_frame_indices": []
+    },
+    {
+      "video_path": "../datasets/celebdf/Celeb-synthesis/id0_id16_0002.mp4",
+      "total_video_frames": 350,
+      "sampled_frames": 12,
+      "saved_faces": 12,
+      "missed_frames": 0,
+      "missed_frame_indices": []
+    },
+    {
+      "video_path": "../datasets/celebdf/Celeb-synthesis/id0_id16_0003.mp4",
+      "total_video_frames": 529,
+      "sampled_frames": 18,
+      "saved_faces": 18,
+      "missed_frames": 0,
+      "missed_frame_indices": []
+    },
+    {
+      "video_path": "../datasets/celebdf/Celeb-synthesis/id0_id16_0004.mp4",
+      "total_video_frames": 326,
+      "sampled_frames": 11,
+      "saved_faces": 11,
+      "missed_frames": 0,
+      "missed_frame_indices": []
+    },
+    {
+      "video_path": "../datasets/celebdf/Celeb-synthesis/id0_id16_0005.mp4",
+      "total_video_frames": 459,
+      "sampled_frames": 16,
+      "saved_faces": 16,
+      "missed_frames": 0,
+      "missed_frame_indices": []
+    },
+    {
+      "video_path": "../datasets/celebdf/Celeb-synthesis/id0_id16_0006.mp4",
+      "total_video_frames": 534,
+      "sampled_frames": 18,
+      "saved_faces": 18,
+      "missed_frames": 0,
+      "missed_frame_indices": []
+    },
+    {
+      "video_path": "../datasets/celebdf/Celeb-synthesis/id0_id16_0007.mp4",
+      "total_video_frames": 479,
+      "sampled_frames": 16,
+      "saved_faces": 16,
+      "missed_frames": 0,
+      "missed_frame_indices": []
+    },
+    {
+      "video_path": "../datasets/celebdf/Celeb-synthesis/id0_id16_0008.mp4",
+      "total_video_frames": 464,
+      "sampled_frames": 16,
+      "saved_faces": 16,
+      "missed_frames": 0,
+      "missed_frame_indices": []
+    },
+    {
+      "video_path": "../datasets/celebdf/Celeb-synthesis/id0_id16_0009.mp4",
+      "total_video_frames": 520,
+      "sampled_frames": 18,
+      "saved_faces": 18,
+      "missed_frames": 0,
+      "missed_frame_indices": []
+    },
+    {
+      "video_path": "../datasets/celebdf/Celeb-synthesis/id0_id17_0000.mp4",
+      "total_video_frames": 469,
+      "sampled_frames": 16,
+      "saved_faces": 16,
+      "missed_frames": 0,
+      "missed_frame_indices": []
+    },
+    {
+      "video_path": "../datasets/celebdf/Celeb-synthesis/id0_id17_0001.mp4",
+      "total_video_frames": 303,
+      "sampled_frames": 11,
+      "saved_faces": 11,
+      "missed_frames": 0,
+      "missed_frame_indices": []
+    },
+    {
+      "video_path": "../datasets/celebdf/Celeb-synthesis/id0_id17_0002.mp4",
+      "total_video_frames": 350,
+      "sampled_frames": 12,
+      "saved_faces": 12,
+      "missed_frames": 0,
+      "missed_frame_indices": []
+    },
+    {
+      "video_path": "../datasets/celebdf/Celeb-synthesis/id0_id17_0003.mp4",
+      "total_video_frames": 529,
+      "sampled_frames": 18,
+      "saved_faces": 18,
+      "missed_frames": 0,
+      "missed_frame_indices": []
+    },
+    {
+      "video_path": "../datasets/celebdf/Celeb-synthesis/id0_id17_0005.mp4",
+      "total_video_frames": 459,
+      "sampled_frames": 16,
+      "saved_faces": 16,
+      "missed_frames": 0,
+      "missed_frame_indices": []
+    },
+    {
+      "video_path": "../datasets/celebdf/Celeb-synthesis/id0_id17_0006.mp4",
+      "total_video_frames": 534,
+      "sampled_frames": 18,
+      "saved_faces": 18,
+      "missed_frames": 0,
+      "missed_frame_indices": []
+    },
+    {
+      "video_path": "../datasets/celebdf/Celeb-synthesis/id0_id17_0007.mp4",
+      "total_video_frames": 479,
+      "sampled_frames": 16,
+      "saved_faces": 16,
+      "missed_frames": 0,
+      "missed_frame_indices": []
+    },
+    {
+      "video_path": "../datasets/celebdf/Celeb-synthesis/id0_id17_0009.mp4",
+      "total_video_frames": 520,
+      "sampled_frames": 18,
+      "saved_faces": 18,
+      "missed_frames": 0,
+      "missed_frame_indices": []
+    },
+    {
+      "video_path": "../datasets/celebdf/Celeb-synthesis/id0_id1_0000.mp4",
+      "total_video_frames": 469,
+      "sampled_frames": 16,
+      "saved_faces": 16,
+      "missed_frames": 0,
+      "missed_frame_indices": []
+    },
+    {
+      "video_path": "../datasets/celebdf/Celeb-synthesis/id0_id1_0001.mp4",
+      "total_video_frames": 303,
+      "sampled_frames": 11,
+      "saved_faces": 11,
+      "missed_frames": 0,
+      "missed_frame_indices": []
+    },
+    {
+      "video_path": "../datasets/celebdf/Celeb-synthesis/id0_id1_0002.mp4",
+      "total_video_frames": 350,
+      "sampled_frames": 12,
+      "saved_faces": 12,
+      "missed_frames": 0,
+      "missed_frame_indices": []
+    },
+    {
+      "video_path": "../datasets/celebdf/Celeb-synthesis/id0_id1_0003.mp4",
+      "total_video_frames": 529,
+      "sampled_frames": 18,
+      "saved_faces": 18,
+      "missed_frames": 0,
+      "missed_frame_indices": []
+    },
+    {
+      "video_path": "../datasets/celebdf/Celeb-synthesis/id0_id1_0005.mp4",
+      "total_video_frames": 459,
+      "sampled_frames": 16,
+      "saved_faces": 16,
+      "missed_frames": 0,
+      "missed_frame_indices": []
+    },
+    {
+      "video_path": "../datasets/celebdf/Celeb-synthesis/id0_id1_0006.mp4",
+      "total_video_frames": 534,
+      "sampled_frames": 18,
+      "saved_faces": 18,
+      "missed_frames": 0,
+      "missed_frame_indices": []
+    },
+    {
+      "video_path": "../datasets/celebdf/Celeb-synthesis/id0_id1_0007.mp4",
+      "total_video_frames": 479,
+      "sampled_frames": 16,
+      "saved_faces": 16,
+      "missed_frames": 0,
+      "missed_frame_indices": []
+    }
+  ]
+}

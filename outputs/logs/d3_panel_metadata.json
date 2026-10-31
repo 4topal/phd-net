@@ -1,0 +1,46 @@
+{
+  "experiment": "D3 — QPC ve HER Görsel Doğrulama Paneli",
+  "selection_method": "Deterministik / Algoritmik Seçim (Elle 'en belirgin' kare seçilmemiştir): Celeb-real klasörünün alfabetik ilk videosu (`id0_0000.mp4`) ve aynı kaynak aktör/sahnenin Celeb-synthesis klasöründeki alfabetik ilk karşılığı (`id0_id16_0000.mp4`) alınmış, her iki videonun `0.` karesi (`frame_idx=0`) doğrudan kullanılmıştır.",
+  "cherry_picked": false,
+  "real_sample": {
+    "video": "/home/a/arastirma_problemleri/datasets/celebdf/Celeb-real/id0_0000.mp4",
+    "frame_index": 0,
+    "qpc_summary_mean": 0.043067,
+    "monochrome_pc_mean": 0.057443,
+    "chromatic_phase_dispersion_mean": 0.021738,
+    "her_frame0_source": 0.288279,
+    "low_energy_frame0": 894.104,
+    "mid_energy_frame0": 257.7511,
+    "high_energy_frame0": 39.7461,
+    "crf_curve_stats": {
+      "her_cv_percent_crf_0_23_40": 1.87,
+      "her_cv_percent_all_5_crfs": 2.223,
+      "mid_energy_cv_percent_crf_0_23_40": 4.854,
+      "high_energy_cv_percent_crf_0_23_40": 2.573,
+      "hfer_high_over_low_cv_percent_crf_0_23_40": 6.423,
+      "her_rel_change_crf0_to_crf23_percent": 2.855,
+      "her_rel_change_crf0_to_crf40_percent": 4.657
+    }
+  },
+  "synthesis_sample": {
+    "video": "/home/a/arastirma_problemleri/datasets/celebdf/Celeb-synthesis/id0_id16_0000.mp4",
+    "frame_index": 0,
+    "qpc_summary_mean": 0.043048,
+    "monochrome_pc_mean": 0.057141,
+    "chromatic_phase_dispersion_mean": 0.021583,
+    "her_frame0_source": 0.286563,
+    "low_energy_frame0": 900.7141,
+    "mid_energy_frame0": 258.1112,
+    "high_energy_frame0": 40.6499,
+    "crf_curve_stats": {
+      "her_cv_percent_crf_0_23_40": 2.342,
+      "her_cv_percent_all_5_crfs": 2.621,
+      "mid_energy_cv_percent_crf_0_23_40": 4.768,
+      "high_energy_cv_percent_crf_0_23_40": 2.558,
+      "hfer_high_over_low_cv_percent_crf_0_23_40": 6.612,
+      "her_rel_change_crf0_to_crf23_percent": 3.188,
+      "her_rel_change_crf0_to_crf40_percent": 5.904
+    }
+  },
+  "figure_path": "/home/a/arastirma_problemleri/kod/outputs/figures/qpc_her_panel.png"
+}

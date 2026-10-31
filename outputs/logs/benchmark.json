@@ -1,0 +1,131 @@
+{
+  "environment": {
+    "timestamp_utc": "2026-10-30T20:59:57.345564+00:00",
+    "platform": "Linux-7.2.13-100.fc43.x86_64-x86_64-with-glibc2.35",
+    "python_version": "3.11.10",
+    "torch_version": "2.5.1+cu124",
+    "cuda_runtime_version": "12.4",
+    "cudnn_version": 90100,
+    "device_type": "cuda",
+    "gpu_name": "NVIDIA GeForce RTX 3050 Laptop GPU",
+    "gpu_total_vram_mb": 3768.25,
+    "dtype": "float32",
+    "input_shape": [
+      1,
+      3,
+      224,
+      224
+    ],
+    "warmup_iterations": 50,
+    "timed_iterations": 250
+  },
+  "models": {
+    "phd_net": {
+      "model_name": "PHD-Net (Phase-Harmonic Discrepancy Network)",
+      "training_status": "EĞİTİLMEMİŞ (Faz 2 yalnızca mimari ve altyapı doğrulamasıdır; doğruluk/AUC iddiası yoktur)",
+      "localization_head_status": "EĞİTİLMEMİŞ / DEĞERLENDİRİLMEMİŞ — FF++ C23 ve Celeb-DF Kaggle kopyalarında manipülasyon maskesi bulunmadığından Dice kaybı değerlendirilmemiştir.",
+      "parameters": {
+        "total": 3756918,
+        "trainable": 3756918,
+        "total_millions": 3.7569,
+        "target_total": 3800000,
+        "diff_from_target": -43082,
+        "diff_percent": -1.13
+      },
+      "preprocessing_separate": {
+        "qpc_only": {
+          "latency_median_ms": 11.689,
+          "latency_mean_ms": 11.6911,
+          "latency_p95_ms": 11.7085,
+          "latency_min_ms": 11.6777,
+          "latency_max_ms": 11.8132,
+          "fps_from_median": 85.55,
+          "max_memory_allocated_bytes": 227736576,
+          "max_memory_allocated_mb": 217.187
+        },
+        "block_dct_8x8_only": {
+          "latency_median_ms": 0.0645,
+          "latency_mean_ms": 0.0655,
+          "latency_p95_ms": 0.0717,
+          "latency_min_ms": 0.0584,
+          "latency_max_ms": 0.1105,
+          "fps_from_median": 15500.99,
+          "max_memory_allocated_bytes": 68893696,
+          "max_memory_allocated_mb": 65.702
+        },
+        "qpc_plus_dct_combined": {
+          "latency_median_ms": 11.7248,
+          "latency_mean_ms": 11.7266,
+          "latency_p95_ms": 11.7455,
+          "latency_min_ms": 11.7107,
+          "latency_max_ms": 11.7975,
+          "fps_from_median": 85.29,
+          "max_memory_allocated_bytes": 228338688,
+          "max_memory_allocated_mb": 217.761
+        }
+      },
+      "model_forward_only": {
+        "latency_median_ms": 3.5867,
+        "latency_mean_ms": 3.6222,
+        "latency_p95_ms": 3.8803,
+        "latency_min_ms": 3.3638,
+        "latency_max_ms": 5.0125,
+        "fps_from_median": 278.81,
+        "max_memory_allocated_bytes": 85472768,
+        "max_memory_allocated_mb": 81.513
+      },
+      "end_to_end_with_preprocessing": {
+        "latency_median_ms": 15.0364,
+        "latency_mean_ms": 15.0417,
+        "latency_p95_ms": 15.0733,
+        "latency_min_ms": 15.018,
+        "latency_max_ms": 15.1613,
+        "fps_from_median": 66.51,
+        "max_memory_allocated_bytes": 229745152,
+        "max_memory_allocated_mb": 219.102
+      },
+      "target_comparison": {
+        "targets": {
+          "params": 3800000,
+          "latency_ms": 8.5,
+          "fps": 115.0,
+          "max_vram_mb": 1228.8
+        },
+        "model_only_vs_target": {
+          "latency_meets_target": true,
+          "latency_delta_ms": -4.9133,
+          "fps_meets_target": true,
+          "fps_delta": 163.81,
+          "vram_meets_target": true
+        },
+        "end_to_end_vs_target": {
+          "latency_meets_target": false,
+          "latency_delta_ms": 6.5364,
+          "fps_meets_target": false,
+          "fps_delta": -48.49,
+          "vram_meets_target": true
+        }
+      }
+    },
+    "meso4": {
+      "model_name": "Meso-4 (Afchar et al., WIFS 2018)",
+      "training_status": "EĞİTİLMEMİŞ (Faz 2 yalnızca baseline mimari ve hız/VRAM doğrulamasıdır)",
+      "input_resolution": "224x224",
+      "parameters": {
+        "total": 24137,
+        "trainable": 24137,
+        "paper_256x256_reference_total": 27977
+      },
+      "model_forward_only": {
+        "latency_median_ms": 0.2847,
+        "latency_mean_ms": 0.2853,
+        "latency_p95_ms": 0.2874,
+        "latency_min_ms": 0.2826,
+        "latency_max_ms": 0.3154,
+        "fps_from_median": 3512.81,
+        "max_memory_allocated_bytes": 21893120,
+        "max_memory_allocated_mb": 20.879
+      }
+    }
+  }
+}
