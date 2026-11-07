@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# D2 ve D3 deneyleri için salt-okunur datasets/ videolarından geçici 5 sn'lik
-# libx264 CRF {0, 18, 23, 32, 40} kopyalarını kod/outputs/tmp_crf/ altına üretir.
+# Sıkıştırma ve görsel doğrulama analizleri için salt-okunur datasets/ videolarından geçici
+# libx264 CRF {0, 18, 23, 32, 40} kopyalarını outputs/tmp_crf/ altına üretir.
 # NOT: datasets/ dizinine kesinlikle yazılmaz (:ro mount).
 set -euo pipefail
 

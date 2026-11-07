@@ -1,5 +1,5 @@
 {
-  "experiment": "D2 — HER Sıkıştırma Dayanıklılığı ve Gerçek/Sahte Ayrışma Testi",
+  "experiment": "Harmonik Enerji Oranı (HER) Sıkıştırma Dayanıklılığı ve Gerçek/Sahte Ayrışma Analizi",
   "methodological_note": "Bu deney, yerel diskte yalnızca FaceForensics++ C23 bulunduğu için C23 videolarının ffmpeg libx264 ile CRF {0, 18, 23, 32, 40} seviyelerinde yeniden kodlanmasına dayalı bir CRF yaklaşımıdır (proxy). Sıkıştırılmamış ham kaynaktan üretilmiş resmi FF++ C0 (RAW) ve C40 veri setleri değildir.",
   "dct_band_config": {
     "low_band": "1 <= u+v <= 3 (DC hariç)",
@@ -2169,5 +2169,5 @@
       }
     ]
   },
-  "figure_path": "/home/a/arastirma_problemleri/kod/outputs/figures/d2_her_crf_analysis.png"
+  "figure_path": "outputs/figures/her_crf_analysis.png"
 }

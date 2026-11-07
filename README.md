@@ -1,20 +1,54 @@
-# PHD-Net
+# PHD-Net (Phase-Harmonic Discrepancy Network)
 
-PHD-Net, video manipülasyonu tespiti için faz uyumu ve frekans özelliklerini inceleyen bir araştırma prototipidir. Depo; yüz karelerinin çıkarılması, faz/frekans özelliklerinin hesaplanması, PHD-Net mimarisi ve Meso-4 karşılaştırma modelini içerir.
+PHD-Net, video yüz manipülasyonu tespiti için faz uyumu (Phase Congruency) ve harmonik frekans özelliklerini inceleyen derin öğrenme araştırma prototipidir. Depo; yüz tespiti ve hizalama, kuaterniyon faz uyumu, öğrenilebilir frekans kapılama mekanizması, PHD-Net iki dallı mimarisi, Meso-4 kıyaslama modeli ve sıkıştırma dayanıklılığı deneylerini içerir.
 
-Proje, Linux ve Windows üzerinde aynı Podman konteyner imajıyla çalışacak şekilde düzenlenmiştir. Ham veri setleri ve üretilen ara dosyalar depoya eklenmez.
+Proje, Linux ve Windows üzerinde aynı Podman konteyner imajıyla çalışacak şekilde platformlar arası mimaride tasarlanmıştır.
+
+---
+
+## Mimari Genel Bakış
+
+PHD-Net, iki tamamlayıcı bilgi akışını birleştiren hafif (*lightweight*) bir mimariye sahiptir:
+
+1. **Uzamsal-Faz Kolu (Spatial-Phase Branch):**
+   - RGB yüz kırpmaları üzerinden çok ölçekli Log-Gabor kuadratür filtre bankası ile **Kuaterniyon Faz Uyumu (QPC)** haritaları üretilir.
+   - Akromatik eksen ve krominans alt-uzayları analiz edilerek **Kromatik Faz Dispersiyonu ($\Delta\Phi_{\text{chrom}}$)** hesaplanır.
+   - `PhaseAttentionGate` katmanı, uzamsal özellikleri faz uyumu haritaları ile dinamik olarak modüle eder.
+   - EdgeNeXt ve RepVGG esinli hafif çok-ölçekli derinlemesine ayrılabilir evrişim blokları ile öznitelikler çıkarılır.
+
+2. **Harmonik Frekans Kolu (Harmonic Branch):**
+   - 8×8 blok 2B DCT-II dönüşümü uygulanır.
+   - Düşük, orta ve yüksek frekans alt-bantları üzerinden **Harmonik Enerji Oranı (HER)** hesaplanır.
+   - `LearnableFreqGate` (LFG), frekans katsayılarını öğrenilebilir kapılar ve HER haritası ile ağırlıklandırır.
+
+3. **Dinamik Frekans-Uzamsal Kalibrasyon (DFSC):**
+   - Uzamsal ve harmonik kollar arasında çift yönlü çapraz kapılama (*cross-gating*) uygulanarak öznitelikler kalibre edilir.
+
+4. **Çok Görevli Başlıklar:**
+   - İkili sınıflandırma başlığı ($B \times 1$) ve birim hiperküre üzerinde L2-normalize kontrastif gömme ($B \times 128, \mathcal{L}_{\text{CCM}}$).
+   - Piksel düzeyinde adli lokalizasyon ısı haritası başlığı ($B \times 1 \times 224 \times 224$).
+
+---
 
 ## Gereksinimler
 
-- Podman
-- Windows için [Podman Desktop ve WSL 2](https://podman-desktop.io/docs/installation/windows-install)
-- İlk imaj oluşturma sırasında internet erişimi
+- [Podman](https://podman.io/) (veya Windows için [Podman Desktop ve WSL 2](https://podman-desktop.io/docs/installation/windows-install))
+- İlk konteyner imajı kurulumu sırasında internet erişimi
 
-PyTorch ve diğer Python bağımlılıkları `Containerfile` ile oluşturulan imajda kurulur. Geliştirme bilgisayarına ayrıca Python paketleri kurmak gerekmez. Komut dosyaları varsayılan olarak CPU modunda çalışır.
+PyTorch ve gerekli Python kütüphaneleri `Containerfile` üzerinden otomatik olarak kurulur. Ana makinede Python bağımlılıkları kurmaya gerek yoktur.
 
-## Kurulum
+---
 
-Depoyu klonlayın ve proje dizinine geçin. İmaj ilk çalıştırmada otomatik oluşturulur. İsterseniz önceden de oluşturabilirsiniz:
+## Kurulum ve Çalıştırma
+
+Depoyu klonlayıp proje dizinine geçin:
+
+```sh
+git clone https://github.com/4topal/phd-net.git
+cd phd-net
+```
+
+Konteyner imajı ilk çalıştırmada otomatik derlenir. İsteğe bağlı olarak önceden de oluşturulabilir:
 
 ```sh
 podman build -t localhost/phd-net-dev:latest -f Containerfile .
@@ -22,22 +56,28 @@ podman build -t localhost/phd-net-dev:latest -f Containerfile .
 
 ### Windows (PowerShell)
 
-Podman Desktop'ı WSL 2 sağlayıcısıyla kurup Podman makinesinin çalıştığını doğrulayın. Ardından proje dizininde:
+Podman Desktop ve Podman makinesinin çalıştığını doğruladıktan sonra:
 
 ```powershell
 & "$PWD/run.ps1" src/phase_congruency.py
 ```
 
-PowerShell betiklerinin çalıştırılması engelleniyorsa yalnızca geçerli terminal oturumu için izin verin:
+GPU erişimi ile çalıştırmak için:
 
 ```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+& "$PWD/run.ps1" -Gpu src/phasefreq_net.py
 ```
 
-Bağımlılıkları veya `Containerfile`'ı değiştirdikten sonra imajı yeniden oluşturmak için:
+İmajı yeniden derlemek için:
 
 ```powershell
 & "$PWD/run.ps1" -Build src/phase_congruency.py
+```
+
+PowerShell betik çalıştırma engeliyle karşılaşılırsa:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 ```
 
 ### Linux (Bash)
@@ -46,63 +86,47 @@ Bağımlılıkları veya `Containerfile`'ı değiştirdikten sonra imajı yenide
 ./run.sh src/phase_congruency.py
 ```
 
-İmajı yeniden oluşturmak için:
+GPU erişimi ile çalıştırmak için:
+
+```bash
+./run.sh --gpu src/phasefreq_net.py
+```
+
+İmajı yeniden derlemek için:
 
 ```bash
 ./run.sh --build src/phase_congruency.py
 ```
 
-Her iki komut da aynı imajı kullanır. `run.sh` Linux'ta SELinux etiketlemesini uygular; PowerShell başlatıcısı Windows ana makine yollarını konteynere bağlar.
+---
 
-## Veri setleri
+## Modüller
 
-Veri setleri lisans ve boyut nedenleriyle depoda bulunmaz. Varsayılan konum depo kökündeki `datasets/` dizinidir. Başka bir konum kullanmak için `PHD_NET_DATASETS` değişkenini ayarlayın; her bilgisayarda bu değişken yerel veri dizinine işaret edebilir.
-
-PowerShell:
-
-```powershell
-$env:PHD_NET_DATASETS = Join-Path $HOME 'datasets'
-& "$PWD/run.ps1" src/face_extractor.py
-```
-
-Bash:
-
-```bash
-export PHD_NET_DATASETS="$HOME/datasets"
-./run.sh src/face_extractor.py
-```
-
-Konteyner içinde yapılandırılan veri dizini `/datasets` olarak görünür. Yüz çıkarıcıya girdi ve çıktı konumlarını şu şekilde verebilirsiniz:
-
-```text
-src/face_extractor.py --data_dir /datasets/celebdf/Celeb-real --output_dir data/processed_faces/celeb_real
-```
-
-Ham veri, kırpılmış kareler ve ara çıktılar `.gitignore` kapsamındadır.
-
-## Kullanım
-
-Modüller kendi doğrulama/örnek çalıştırma kodlarını içerir. Başlatıcıya modül yolunu ve gerekiyorsa modül argümanlarını verin.
+Projedeki her modül kendi doğrulama ve test bloğunu içerir:
 
 | Modül | İşlev |
 |---|---|
-| `src/face_extractor.py` | YuNet ile yüz tespiti ve kırpılmış kare çıkarımı |
-| `src/phase_congruency.py` | Monokrom ve kuaterniyon faz uyumu, `PhaseAttentionGate` |
-| `src/learnable_freq_gate.py` | Blok DCT, harmonik enerji oranı ve öğrenilebilir frekans kapısı |
-| `src/phasefreq_net.py` | PHD-Net mimarisi ve benchmark doğrulaması |
-| `src/mesonet.py` | Meso-4 karşılaştırma modeli |
-| `src/frequency_extractor.py` | FFT ve DCT tabanlı frekans özellikleri |
+| `src/face_extractor.py` | YuNet ONNX ile yüz tespiti ve %20 marjlı 224×224 kırpma |
+| `src/phase_congruency.py` | Monokrom ve kuaterniyon faz uyumu (QPC), `PhaseAttentionGate` |
+| `src/learnable_freq_gate.py` | 8×8 blok DCT, Harmonik Enerji Oranı (HER) ve `LearnableFreqGate` |
+| `src/phasefreq_net.py` | PHD-Net iki dallı mimarisi, DFSC füzyonu ve benchmark modülü |
+| `src/mesonet.py` | Meso-4 baseline karşılaştırma modeli ve benchmark modülü |
+| `src/frequency_extractor.py` | Klasik 2B FFT (azimutal profil) ve DCT alt-bant öznitelik çıkarımı |
+| `src/run_compression_experiments.py` | H.264 CRF sıkıştırma dayanıklılığı analizi ve görsel doğrulama paneli |
 
-Örnekler:
+### Örnek Çalıştırma Komutları
 
 ```sh
 # Faz uyumu bileşenlerini doğrula
 ./run.sh src/phase_congruency.py
 
-# Frekans kapısını doğrula
+# Öğrenilebilir frekans kapısını doğrula
 ./run.sh src/learnable_freq_gate.py
 
-# Belirli bir video dizininden yüz kareleri çıkar
+# PHD-Net model mimarisi ve çıkarım gecikmesini ölç
+./run.sh --gpu src/phasefreq_net.py
+
+# Video dizininden yüz kareleri çıkar
 ./run.sh src/face_extractor.py \
   --data_dir /datasets/celebdf/Celeb-real \
   --output_dir data/processed_faces/celeb_real \
@@ -110,29 +134,27 @@ Modüller kendi doğrulama/örnek çalıştırma kodlarını içerir. Başlatıc
   --max_videos 5
 ```
 
-PowerShell'de aynı modülleri `run.ps1` ile çalıştırın; örneğin `& "$PWD/run.ps1" src/phase_congruency.py`.
+---
 
-Modül listesinde yer almayan `src/run_d2_d3_experiments.py`, aşağıdaki CRF kliplerini ve ilgili veri setlerini gerektiren D2/D3 deneylerini çalıştırır.
+## Sıkıştırma Dayanıklılığı ve Görsel Doğrulama Deneyleri
 
-## D2/D3 CRF deneyleri
-
-CRF klip hazırlama akışı bu revizyonda taşınabilir hâle getirilmemiştir. `reencode_crf_clips.sh`, Bash ve `localhost/repo-lab/ister3-preprocess:v1` adlı önceden oluşturulmuş yerel Podman imajını kullanır. Bu adım için Linux veya uygun Bash/Podman ortamı gerekir. Klipler hazırlandıktan sonra D2/D3 Python modülü ortak proje imajında çalıştırılabilir:
+Sıkıştırma dayanıklılığı testleri, FaceForensics++ C23 videolarının `libx264` ile farklı CRF seviyelerinde ({0, 18, 23, 32, 40}) yeniden kodlanarak HER metriklerinin incelenmesini sağlar:
 
 ```bash
+# Geçici CRF kliplerini üret
 ./reencode_crf_clips.sh
-./run.sh src/run_d2_d3_experiments.py
+
+# Sıkıştırma dayanıklılığı ve görsel doğrulama panelini çalıştır
+./run.sh src/run_compression_experiments.py
 ```
 
-## Model ve deney kapsamı
+Sonuçlar ve grafikler otomatik olarak `outputs/logs/` ve `outputs/figures/` dizinlerine kaydedilir.
 
-- YuNet modeli `models/face_detection_yunet_2023mar.onnx` dosyasından yüklenir ve SHA256 özeti doğrulanır.
-- PHD-Net ve Meso-4 mimari/benchmark doğrulamaları içerir; bu depodaki sonuçlar modellerin eğitildiği anlamına gelmez.
-- Veri setinde manipülasyon maskeleri bulunmadığından PHD-Net'in yerelleştirme başlığı ve Dice kaybı eğitilip değerlendirilmemiştir.
-- D2/D3 deneyleri gereken veri setlerini ve CRF kliplerini önceden bekler.
+---
 
-## Dizin yapısı
+## Veri Setleri Dizin Yapısı
 
-### Veri seti yerleşimi
+Veri setleri depoya dahil edilmez. Varsayılan konum `datasets/` dizinidir; alternatif olarak `PHD_NET_DATASETS` ortam değişkeni kullanılabilir:
 
 ```text
 datasets/
@@ -146,23 +168,32 @@ datasets/
         └── Face2Face/
 ```
 
-Bu dizin yapısı veri setlerinin beklenen yerleşimini gösterir; veri dosyaları depoya eklenmez.
+Konteyner içinde yapılandırılan veri dizini `/datasets` yoluna salt-okunur (`:ro`) bağlanır.
 
-### Depo
+---
+
+## Depo Yapısı
 
 ```text
 .
-├── Containerfile
-├── README.md
-├── requirements.txt
-├── run.sh
-├── run.ps1
-├── reencode_crf_clips.sh
+├── Containerfile                         # Konteyner imaj tanımı (PyTorch + CUDA)
+├── README.md                             # Proje dokümantasyonu
+├── requirements.txt                      # Python bağımlılıkları
+├── run.sh                                # Linux başlatıcı betik
+├── run.ps1                               # Windows PowerShell başlatıcı betik
+├── reencode_crf_clips.sh                 # CRF yeniden kodlama betiği
 ├── models/
+│   └── face_detection_yunet_2023mar.onnx # YuNet yüz tespit modeli
 ├── src/
-├── datasets/                 # Yerel veri setleri; Git'e eklenmez
-├── data/                     # İşlenmiş kareler; Git'e eklenmez
+│   ├── face_extractor.py                 # Yüz tespit ve kırpma hattı
+│   ├── frequency_extractor.py            # Klasik frekans öznitelik çıkarımı
+│   ├── learnable_freq_gate.py            # Blok DCT, HER ve frekans kapısı
+│   ├── mesonet.py                        # Meso-4 baseline mimarisi
+│   ├── phase_congruency.py               # Kuaterniyon faz uyumu (QPC)
+│   ├── phasefreq_net.py                  # PHD-Net ana mimarisi ve kayıplar
+│   ├── project_paths.py                  # Ortak yol yapılandırması
+│   └── run_compression_experiments.py    # Sıkıştırma ve görsel analizler
 └── outputs/
-    ├── logs/
-    └── figures/
+    ├── figures/                          # Üretilen grafik ve paneller
+    └── logs/                             # Kıyaslama ve deney kayıtları
 ```

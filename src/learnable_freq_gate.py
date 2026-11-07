@@ -57,7 +57,7 @@ def build_dct_band_masks(
 
     u = torch.arange(block_size, device=device).unsqueeze(1)
     v = torch.arange(block_size, device=device).unsqueeze(0)
-    freq_idx = u + v  # (8, 8), 0..14
+    freq_idx = u + v
 
     low_min = 0 if include_dc else 1
     low_mask = ((freq_idx >= low_min) & (freq_idx <= low_max)).to(dtype)
@@ -133,14 +133,14 @@ class HarmonicEnergyRatio(nn.Module):
         mid_m = self.mid_mask.to(dtype=abs_dct.dtype, device=abs_dct.device)
         high_m = self.high_mask.to(dtype=abs_dct.dtype, device=abs_dct.device)
 
-        low_energy = (abs_dct * low_m).sum(dim=(-2, -1))    # (B, C, H_b, W_b)
-        mid_energy = (abs_dct * mid_m).sum(dim=(-2, -1))    # (B, C, H_b, W_b)
-        high_energy = (abs_dct * high_m).sum(dim=(-2, -1))  # (B, C, H_b, W_b)
+        low_energy = (abs_dct * low_m).sum(dim=(-2, -1))
+        mid_energy = (abs_dct * mid_m).sum(dim=(-2, -1))
+        high_energy = (abs_dct * high_m).sum(dim=(-2, -1))
 
-        her_map = mid_energy / (low_energy + self.eps)  # (B, C, H_b, W_b)
-        her_channel = mid_energy.sum(dim=(-2, -1)) / (low_energy.sum(dim=(-2, -1)) + self.eps)  # (B, C)
-        her_global = mid_energy.sum(dim=(1, 2, 3)) / (low_energy.sum(dim=(1, 2, 3)) + self.eps)  # (B,)
-        mean_abs_spectrum = abs_dct.mean(dim=(2, 3))  # (B, C, 8, 8)
+        her_map = mid_energy / (low_energy + self.eps)
+        her_channel = mid_energy.sum(dim=(-2, -1)) / (low_energy.sum(dim=(-2, -1)) + self.eps)
+        her_global = mid_energy.sum(dim=(1, 2, 3)) / (low_energy.sum(dim=(1, 2, 3)) + self.eps)
+        mean_abs_spectrum = abs_dct.mean(dim=(2, 3))
 
         return {
             "her_map": her_map,
@@ -183,12 +183,9 @@ class LearnableFreqGate(nn.Module):
             low_max=low_max, mid_max=mid_max, include_dc=include_dc, eps=eps
         )
 
-        # Her kanal ve 8x8 frekans konumu için öğrenilebilir kapı parametresi (başlangıçta sigmoid(0)*2 = 1.0)
         self.freq_gate_logits = nn.Parameter(torch.zeros(in_channels, 8, 8))
-        # Düşük / orta / yüksek bant ağırlık ölçekleri
         self.band_scales = nn.Parameter(torch.ones(in_channels, 3))
 
-        # Girdi kanalları: in_channels*64 (kapılanmış log-DCT) + in_channels (HER) + in_channels*3 (bant enerjileri)
         raw_freq_dim = in_channels * 64 + in_channels * 4
 
         self.proj_28 = nn.Sequential(
@@ -209,7 +206,6 @@ class LearnableFreqGate(nn.Module):
             nn.BatchNorm2d(out_channels_28),
         )
 
-        # HER tabanlı uzamsal dikkat kapısı
         self.her_spatial_gate = nn.Sequential(
             nn.Conv2d(in_channels * 2, out_channels_28 // 2, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(out_channels_28 // 2),
@@ -218,7 +214,6 @@ class LearnableFreqGate(nn.Module):
             nn.Sigmoid(),
         )
 
-        # 28x28 -> 14x14 derin harmonik öznitelik bloğu
         self.down_14 = nn.Sequential(
             nn.Conv2d(
                 out_channels_28,
@@ -254,23 +249,22 @@ class LearnableFreqGate(nn.Module):
         her_stats = self.her_calc.compute_from_dct_blocks(dct_blocks)
         b, c, hb, wb, _, _ = dct_blocks.shape
 
-        # Öğrenilebilir 8x8 frekans kapısı + bant ölçekleme
-        freq_gate = 2.0 * torch.sigmoid(self.freq_gate_logits)  # (C, 8, 8)
+        freq_gate = 2.0 * torch.sigmoid(self.freq_gate_logits)
         low_m = self.her_calc.low_mask.to(dct_blocks.dtype)
         mid_m = self.her_calc.mid_mask.to(dct_blocks.dtype)
         high_m = self.her_calc.high_mask.to(dct_blocks.dtype)
         dc_m = (1.0 - (low_m + mid_m + high_m)).clamp(min=0.0)
 
-        scales = F.softplus(self.band_scales)  # (C, 3) pozitif ölçekler
+        scales = F.softplus(self.band_scales)
         band_weight_map = (
             dc_m.unsqueeze(0)
             + scales[:, 0:1].unsqueeze(-1) * low_m.unsqueeze(0)
             + scales[:, 1:2].unsqueeze(-1) * mid_m.unsqueeze(0)
             + scales[:, 2:3].unsqueeze(-1) * high_m.unsqueeze(0)
-        )  # (C, 8, 8)
+        )
 
         total_gate = (freq_gate * band_weight_map).view(1, c, 1, 1, 8, 8)
-        gated_log_dct = torch.log1p(dct_blocks.abs() * total_gate)  # (B, C, Hb, Wb, 8, 8)
+        gated_log_dct = torch.log1p(dct_blocks.abs() * total_gate)
         flat_dct = gated_log_dct.permute(0, 1, 4, 5, 2, 3).reshape(b, c * 64, hb, wb)
 
         her_map = her_stats["her_map"]
@@ -283,7 +277,7 @@ class LearnableFreqGate(nn.Module):
                 torch.log1p(her_stats["high_energy"]),
             ],
             dim=1,
-        )  # (B, 4*C, Hb, Wb)
+        )
 
         raw_in = torch.cat([flat_dct, band_stack], dim=1)
         feat_28_base = self.proj_28(raw_in)
@@ -294,7 +288,7 @@ class LearnableFreqGate(nn.Module):
 
 
 if __name__ == "__main__":
-    print("=== learnable_freq_gate.py Kendi Kendini Test Modu ===")
+    print("=== learnable_freq_gate.py Doğrulama ve Test Modu ===")
     dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Cihaz: {dev}")
 

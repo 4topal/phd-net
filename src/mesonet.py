@@ -1,4 +1,4 @@
-"""Meso-4 (Afchar et al., 2018) PyTorch Uygulaması ve GPU Benchmark Modülü.
+"""Meso-4 (Afchar et al., 2018) PyTorch Uygulaması ve Benchmark Modülü.
 
 Kaynak:
     D. Afchar, V. Nozick, J. Yamagishi, I. Echizen (2018),
@@ -10,8 +10,8 @@ Notlar:
     - PHD-Net ön işleme hattıyla (224x224 kırpılmış yüzler) birebir adil karşılaştırma için
       varsayılan `image_size=224` (`flat_dim = 16 * 7 * 7 = 784`, 24,137 parametre) desteklenir;
       `image_size=256` da parametrik olarak seçilebilir.
-    - Faz 2 kapsamında model **eğitilmemiştir**; doğruluk/AUC iddiası yapılmaz, yalnızca D1
-      hesaplama/bellek benchmark'ı ölçülür ve `kod/outputs/logs/benchmark.json` dosyasına yazılır.
+    - Model mimarisi baseline kıyaslama ve çıkarım performansı (gecikme / bellek) analizi için eklenmiştir;
+      ağırlık eğitimi sonrasında sınıflandırma performansı ölçülür.
 """
 
 from __future__ import annotations
@@ -98,7 +98,6 @@ def run_meso4_benchmark(
     model = Meso4(image_size=image_size).to(device=device, dtype=dtype).eval()
     total_params, trainable_params = count_parameters(model)
 
-    # Referans bilgi: orijinal 256x256 makale konfigürasyonu parametre sayısı
     orig_256_params, _ = count_parameters(Meso4(image_size=256))
 
     x = torch.rand(input_shape, device=device, dtype=dtype)
@@ -106,7 +105,7 @@ def run_meso4_benchmark(
 
     meso_report: Dict[str, Any] = {
         "model_name": "Meso-4 (Afchar et al., WIFS 2018)",
-        "training_status": "EĞİTİLMEMİŞ (Faz 2 yalnızca baseline mimari ve hız/VRAM doğrulamasıdır)",
+        "training_status": "EĞİTİLMEMİŞ (Baseline mimari hız ve VRAM analizi doğrulaması)",
         "input_resolution": f"{image_size}x{image_size}",
         "parameters": {
             "total": total_params,
@@ -122,7 +121,7 @@ def run_meso4_benchmark(
 
 
 if __name__ == "__main__":
-    print("=== mesonet.py (Meso-4 Baseline) Kendi Kendini Test ve D1 Benchmark ===")
+    print("=== mesonet.py (Meso-4 Baseline) Model Doğrulama ve Benchmark ===")
     dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # 1. İleri / geri yayılım doğrulaması
@@ -137,11 +136,11 @@ if __name__ == "__main__":
     if dev.type == "cuda":
         torch.cuda.empty_cache()
 
-    # 2. D1 GPU Benchmark
+    # 2. GPU Benchmark
     rep = run_meso4_benchmark(image_size=224, warmup=50, runs=250, json_path=DEFAULT_BENCHMARK_PATH)
     m = rep["model_forward_only"]
     p = rep["parameters"]
-    print("\n--- Meso-4 D1 Benchmark Özeti (Batch=1, 224x224, FP32) ---")
+    print("\n--- Meso-4 Benchmark Özeti (Batch=1, 224x224, FP32) ---")
     print(
         f"Parametre Sayısı        : {p['total']:,} (224x224) | "
         f"Orijinal 256x256 referans: {p['paper_256x256_reference_total']:,}"

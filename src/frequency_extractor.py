@@ -66,10 +66,10 @@ class ClassicalFrequencyExtractor(nn.Module):
     @torch.no_grad()
     def extract_fft_azimuthal_profile(self, rgb: torch.Tensor) -> torch.Tensor:
         """Girdi `(B, 3, H, W)` -> Azimutal ortalamalı normalize log-FFT güç profili `(B, n_radial_bins)`."""
-        gray = 0.299 * rgb[:, 0] + 0.587 * rgb[:, 1] + 0.114 * rgb[:, 2]  # (B, H, W)
+        gray = 0.299 * rgb[:, 0] + 0.587 * rgb[:, 1] + 0.114 * rgb[:, 2]
         b, h, w = gray.shape
         fft2 = torch.fft.fftshift(torch.fft.fft2(gray.float()), dim=(-2, -1))
-        log_mag = torch.log1p(fft2.abs()).view(b, -1)  # (B, H*W)
+        log_mag = torch.log1p(fft2.abs()).view(b, -1)
 
         bin_idx, counts = self._get_radial_bins(h, w, rgb.device)
         profile = torch.zeros(b, self.n_radial_bins, device=rgb.device, dtype=torch.float32)
@@ -111,7 +111,7 @@ class ClassicalFrequencyExtractor(nn.Module):
                 hfer,
             ],
             dim=1,
-        )  # (B, 27)
+        )
         return feats
 
     @torch.no_grad()
@@ -128,7 +128,7 @@ class ClassicalFrequencyExtractor(nn.Module):
 
 
 if __name__ == "__main__":
-    print("=== frequency_extractor.py Kendi Kendini Test Modu ===")
+    print("=== frequency_extractor.py Doğrulama ve Test Modu ===")
     dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     extractor = ClassicalFrequencyExtractor(n_radial_bins=64).to(dev)
 

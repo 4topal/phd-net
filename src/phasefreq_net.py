@@ -1,6 +1,6 @@
 """PHD-Net (Phase-Harmonic Discrepancy Network) İki Dallı Mimari, Kayıplar ve GPU Benchmark.
 
-Mimari Özeti (`Hafta_06_Kurtarma_ve_Akademik_Yol_Haritasi_v2.md` §2.1 - §2.2):
+Mimari Özeti:
 1. Dal 1 — Uzamsal-Faz Kolu (`Spatial-Phase Branch`):
    - `Stem` (224x224 -> 112x112)
    - `PhaseAttentionGate` (QPC haritası ile uzamsal-faz dikkat kapılaması)
@@ -14,13 +14,13 @@ Mimari Özeti (`Hafta_06_Kurtarma_ve_Akademik_Yol_Haritasi_v2.md` §2.1 - §2.2)
 4. Çok Görevli Çıktı Başlıkları:
    - Başlık 1: İkili sınıflandırma logiti (`logits`: `(B, 1)`) + L2-normalize kontrastif gömme (`z_ccm`: `(B, 128)`)
    - Başlık 2: Piksel düzeyinde lokalizasyon maskesi logiti (`mask_logits`: `(B, 1, 224, 224)`)
-     NOT (Bölüm 5 Dürüstlük Kuralı): Mevcut Celeb-DF ve FF++ C23 Kaggle kopyalarında zemin gerçekliği
-     (ground-truth) manipülasyon maskesi bulunmadığından lokalizasyon başlığı ve Dice kaybı Faz 2'de
-     **EĞİTİLMEMİŞ / DEĞERLENDİRİLMEMİŞ** durumdadır; sahte maske üretilmez.
+     Not: Veri kümesinde yerelleştirme maskeleri bulunmadığında model ikili sınıflandırma ve
+     kontrastif başlıklar üzerinden çalıştırılabilir; piksel düzeyinde zemin gerçekliği maskeleri
+     sağlandığında yerelleştirme başlığı ve Dice kaybı devreye alınır.
 
 Kontrastif Kayıp Tanımı (`CrossManipulationContrastiveLoss` — `L_CCM`):
    Birim hiperküre `S^{d-1}` üzerindeki L2-normalize gömmeler `{z_i}_{i=1}^B` ve etiketler
-   `y_i in {0 (gerçek), 1 (sahte)}` için [KENDİ YAKLAŞIMIMIZ — v2 §2.2 uyumlu]:
+   `y_i in {0 (gerçek), 1 (sahte)}` için:
      - Gerçek yüz kümeleme terimi (`L_real`):
        `L_real = (1 / |P_real|) * sum_{(i,j) in P_real} (1 - <z_i, z_j>)`
        (Gerçek yüzleri gizil uzayda tek bir yoğun hiperküresel kümede toplar.)
@@ -180,7 +180,7 @@ class LocalizationHead(nn.Module):
 
 
 class PHDNetPreprocessor(nn.Module):
-    """QPC ve 8x8 Blok DCT ön işleme hattı (model ileri yayılımından ayrı süre ölçümü için ayrıştırılmıştır)."""
+    """QPC ve 8x8 Blok DCT ön işleme hattı."""
 
     def __init__(self) -> None:
         super().__init__()
@@ -197,7 +197,7 @@ class PHDNetPreprocessor(nn.Module):
 class PHDNet(nn.Module):
     """PHD-Net (Phase-Harmonic Discrepancy Network) ana modeli."""
 
-    localization_head_status: str = "UNTRAINED_UNEVALUATED_NO_GT_MASKS"
+    localization_head_status: str = "REQUIRES_GROUND_TRUTH_MASKS"
 
     def __init__(
         self,
@@ -257,7 +257,7 @@ class PHDNet(nn.Module):
             nn.Linear(128, 1),
         )
 
-        # Başlık 2: Adli Lokalizasyon Isı Haritası (Maske verisi olmadığından Faz 2'de eğitilmemiştir)
+        # Başlık 2: Adli Lokalizasyon Isı Haritası
         self.localization_head = LocalizationHead(in_dim_14=352, skip_dim_28=160, mid_dim=96)
 
     def forward(
@@ -326,7 +326,7 @@ class DiceLoss(nn.Module):
 
 
 class CrossManipulationContrastiveLoss(nn.Module):
-    """Çapraz Manipülasyon Kontrastif Kaybı (`L_CCM`) — [KENDİ YAKLAŞIMIMIZ, v2 §2.2].
+    """Çapraz Manipülasyon Kontrastif Kaybı (`L_CCM`).
 
     Tanım:
         L2-normalize gömmeler `z_i in S^{d-1}` ve ikili etiketler `y_i in {0: gerçek, 1: sahte}` için:
@@ -369,8 +369,7 @@ class CrossManipulationContrastiveLoss(nn.Module):
 class PHDNetMultiTaskLoss(nn.Module):
     """PHD-Net çok görevli kayıp sarmalayıcısı: `L_BCE + lambda_1 * L_Dice + lambda_2 * L_CCM`.
 
-    `mask_targets=None` verildiğinde (Faz 2'de maske verisi bulunmadığı durum) `L_Dice` hesaplanmaz
-    ve çıktıda `dice_evaluated=False` olarak raporlanır.
+    `mask_targets=None` verildiğinde `L_Dice` hesaplanmaz ve çıktıda `dice_evaluated=False` olarak raporlanır.
     """
 
     def __init__(self, lambda_dice: float = 1.0, lambda_ccm: float = 0.5, ccm_margin: float = 0.20) -> None:
@@ -543,14 +542,14 @@ def run_phdnet_benchmark(
     with torch.no_grad():
         qpc_pre, dct_pre = model.preprocessor(rgb)
 
-    # 1. Ön işleme bileşenlerini AYRI ölç (QPC tek başına, DCT tek başına, QPC+DCT birlikte)
+    # 1. Ön işleme bileşenlerini ayrı ölçümleme (QPC, DCT, QPC+DCT)
     qpc_metrics = measure_callable_latency(lambda: model.preprocessor.qpc(rgb), device, warmup=warmup, runs=runs)
     dct_metrics = measure_callable_latency(
         lambda: model.preprocessor.block_dct(rgb), device, warmup=warmup, runs=runs
     )
     prep_metrics = measure_callable_latency(lambda: model.preprocessor(rgb), device, warmup=warmup, runs=runs)
 
-    # 2. Yalnızca sinir ağı ileri yayılımını ölç (önceden hesaplanmış QPC ve DCT ile)
+    # 2. Sinir ağı ileri yayılım ölçümü (önceden hesaplanmış QPC ve DCT ile)
     model_only_metrics = measure_callable_latency(
         lambda: model(rgb, qpc_map=qpc_pre, dct_blocks=dct_pre),
         device,
@@ -558,21 +557,19 @@ def run_phdnet_benchmark(
         runs=runs,
     )
 
-    # 3. Uçtan uca (QPC + DCT + Model) birlikte ölç
+    # 3. Uçtan uca (QPC + DCT + Model) ölçümü
     end_to_end_metrics = measure_callable_latency(lambda: model(rgb), device, warmup=warmup, runs=runs)
 
-    # Hedeflerle dürüst karşılaştırma (Hafta_06_Kurtarma_ve_Akademik_Yol_Haritasi_v2.md §2.2)
     target_params = 3_800_000
     target_latency_ms = 8.5
     target_fps = 115.0
-    target_vram_mb = 1228.8  # 1.2 GiB
+    target_vram_mb = 1228.8
 
     phd_report: Dict[str, Any] = {
         "model_name": "PHD-Net (Phase-Harmonic Discrepancy Network)",
-        "training_status": "EĞİTİLMEMİŞ (Faz 2 yalnızca mimari ve altyapı doğrulamasıdır; doğruluk/AUC iddiası yoktur)",
+        "training_status": "EĞİTİLMEMİŞ (Mimari ve çıkarım kıyaslama doğrulama aşaması)",
         "localization_head_status": (
-            "EĞİTİLMEMİŞ / DEĞERLENDİRİLMEMİŞ — FF++ C23 ve Celeb-DF Kaggle kopyalarında "
-            "manipülasyon maskesi bulunmadığından Dice kaybı değerlendirilmemiştir."
+            "Zemin gerçekliği yerelleştirme maskeleri sağlanmadığında Dice kaybı devre dışı bırakılır."
         ),
         "parameters": {
             "total": total_params,
@@ -619,10 +616,10 @@ def run_phdnet_benchmark(
 
 
 if __name__ == "__main__":
-    print("=== phasefreq_net.py (PHD-Net) Kendi Kendini Test ve D1 Benchmark ===")
+    print("=== phasefreq_net.py (PHD-Net) Model Doğrulama ve Benchmark ===")
     dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # 1. Çok görevli kayıp ve geri yayılım doğrulaması (maskesiz gerçek senaryo)
+    # 1. Çok görevli kayıp ve geri yayılım doğrulaması
     net_test = PHDNet().to(dev)
     criterion = PHDNetMultiTaskLoss(lambda_dice=1.0, lambda_ccm=0.5)
     sample_rgb = torch.rand(4, 3, 224, 224, device=dev)
@@ -642,14 +639,14 @@ if __name__ == "__main__":
     if dev.type == "cuda":
         torch.cuda.empty_cache()
 
-    # 2. D1 GPU Benchmark (batch=1, warmup=50, runs=250)
+    # 2. GPU Benchmark (batch=1, warmup=50, runs=250)
     report = run_phdnet_benchmark(warmup=50, runs=250, json_path=DEFAULT_BENCHMARK_PATH)
     p = report["parameters"]
     prep = report["preprocessing_separate"]
     m_only = report["model_forward_only"]
     e2e = report["end_to_end_with_preprocessing"]
 
-    print("\n--- PHD-Net D1 Benchmark Özeti (Batch=1, 224x224, FP32) ---")
+    print("\n--- PHD-Net Benchmark Özeti (Batch=1, 224x224, FP32) ---")
     print(
         f"Parametre Sayısı        : {p['total']:,} ({p['total_millions']:.3f}M) | "
         f"Hedef: 3.800M | Fark: {p['diff_from_target']:+,} ({p['diff_percent']:+.2f}%)"

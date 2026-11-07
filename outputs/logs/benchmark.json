@@ -22,8 +22,8 @@
   "models": {
     "phd_net": {
       "model_name": "PHD-Net (Phase-Harmonic Discrepancy Network)",
-      "training_status": "EĞİTİLMEMİŞ (Faz 2 yalnızca mimari ve altyapı doğrulamasıdır; doğruluk/AUC iddiası yoktur)",
-      "localization_head_status": "EĞİTİLMEMİŞ / DEĞERLENDİRİLMEMİŞ — FF++ C23 ve Celeb-DF Kaggle kopyalarında manipülasyon maskesi bulunmadığından Dice kaybı değerlendirilmemiştir.",
+      "training_status": "EĞİTİLMEMİŞ (Mimari ve çıkarım kıyaslama doğrulama aşaması)",
+      "localization_head_status": "Zemin gerçekliği yerelleştirme maskeleri sağlanmadığında Dice kaybı devre dışı bırakılır.",
       "parameters": {
         "total": 3756918,
         "trainable": 3756918,
@@ -109,7 +109,7 @@
     },
     "meso4": {
       "model_name": "Meso-4 (Afchar et al., WIFS 2018)",
-      "training_status": "EĞİTİLMEMİŞ (Faz 2 yalnızca baseline mimari ve hız/VRAM doğrulamasıdır)",
+      "training_status": "EĞİTİLMEMİŞ (Baseline mimari hız ve VRAM analizi doğrulaması)",
       "input_resolution": "224x224",
       "parameters": {
         "total": 24137,

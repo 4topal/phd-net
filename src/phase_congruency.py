@@ -1,6 +1,6 @@
 """Log-Gabor Tabanlı Monokrom (Kovesi) ve Kuaterniyon Faz Uyumu (QPC) + Faz Dikkat Kapısı.
 
-Matematiksel Kaynaklar ve Formülasyon Şeffaflığı:
+Matematiksel Kaynaklar ve Formülasyon:
 1. Monokrom Faz Uyumu (`MonochromePhaseCongruency`):
    - Kaynak: P. Kovesi (1999), "Image Features From Phase Congruency", Videre: Journal of
      Computer Vision Research, 1(3), 1-26; P. Kovesi (2003), `phasecong3` algoritması.
@@ -9,15 +9,12 @@ Matematiksel Kaynaklar ve Formülasyon Şeffaflığı:
      `DeltaPhi(x,y) = cos(phi - phi_mean) - |sin(phi - phi_mean)|`.
 
 2. Kuaterniyon / Renk Faz Uyumu (`QuaternionPhaseCongruency` — QPC):
-   - Temel renk temsili kaynağı: T. A. Ell & S. J. Sangwine (2007), "Hypercomplex Fourier
+   - Temel renk temsili: T. A. Ell & S. J. Sangwine (2007), "Hypercomplex Fourier
      Transforms of Color Images", IEEE Transactions on Image Processing, 16(1), 22-35.
      Saf kuaterniyon görüntü alanı `q(x,y) = R(x,y)i + G(x,y)j + B(x,y)k` ve akromatik gri
      eksen `mu = (i + j + k) / sqrt(3)` etrafında parlaklık-krominans dik ayrıştırması kullanılır.
-   - ETİKET — [KENDİ YAKLAŞIMIMIZ / ÖZGÜN UYARLAMA]:
-     Referans yol haritası (§2.2) `q = Ri + Gj + Bk` ve Kromatik Faz Dispersiyonu (`DeltaPhi_chrom`)
-     kavramını tanımlamakta, ancak kapalı-form bir makale denklemi vermemektedir. Bu modülde
-     Kovesi (1999) Log-Gabor kuadratür analizini Ell & Sangwine (2007) saf kuaterniyon uzayıyla
-     birleştiren 3-kanallı QPC tensörü **kendi yaklaşımımız** olarak tasarlanmıştır:
+   - Kovesi (1999) Log-Gabor kuadratür analizini Ell & Sangwine (2007) saf kuaterniyon uzayıyla
+     birleştiren 3-kanallı QPC tensörü:
        * Kanal 0 (`qpc_joint`): RGB kuaterniyon genliği üzerinden birleşik hiperkompleks faz uyumu,
        * Kanal 1 (`qpc_chrom`): `mu` eksenine dik krominans düzlemi `(C1, C2)` faz uyumu,
        * Kanal 2 (`delta_phi_chrom`): R, G, B kanallarının yerel birim fazörleri arasındaki
@@ -84,7 +81,7 @@ def _build_log_gabor_bank(
         rad = torch.exp(-(log_rad.square()) / (2.0 * log_sigma * log_sigma)) * lowpass
         rad[0, 0] = 0.0
         radial_filters.append(rad)
-    radial_stack = torch.stack(radial_filters, dim=0)  # (S, H, W)
+    radial_stack = torch.stack(radial_filters, dim=0)
 
     theta_sigma = math.pi / (n_orientations * d_theta_on_sigma)
     angular_filters = []
@@ -93,12 +90,11 @@ def _build_log_gabor_bank(
         ds = torch.sin(theta) * math.cos(angle) - torch.cos(theta) * math.sin(angle)
         dc = torch.cos(theta) * math.cos(angle) + torch.sin(theta) * math.sin(angle)
         dtheta = torch.atan2(ds, dc).abs()
-        # Tek-yönlü açısal Gauss -> analitik sinyal için 2.0 çarpanı
         ang = 2.0 * torch.exp(-(dtheta.square()) / (2.0 * theta_sigma * theta_sigma))
         angular_filters.append(ang)
-    angular_stack = torch.stack(angular_filters, dim=0)  # (O, H, W)
+    angular_stack = torch.stack(angular_filters, dim=0)
 
-    bank = radial_stack.unsqueeze(1) * angular_stack.unsqueeze(0)  # (S, O, H, W)
+    bank = radial_stack.unsqueeze(1) * angular_stack.unsqueeze(0)
     return bank
 
 
@@ -111,42 +107,32 @@ def _kovesi_pc_from_quadrature(
     gain: float = 10.0,
     eps: float = 1e-4,
 ) -> torch.Tensor:
-    """Kuadratür `(even, odd)` tepkilerinden Kovesi (1999) faz uyumunu hesaplar.
-
-    Args:
-        even: `(B, S, O, H, W)` çift filtre tepkisi (veya çok kanallı birleşim öncesi).
-        odd: `(B, S, O, H, W)` tek filtre tepkisi.
-    Returns:
-        `(B, 1, H, W)` aralığı `[0, 1]` olan faz uyumu haritası.
-    """
+    """Kuadratür `(even, odd)` tepkilerinden Kovesi (1999) faz uyumunu hesaplar."""
     n_scales = even.shape[1]
-    amp = torch.sqrt(even.square() + odd.square() + eps * eps)  # (B, S, O, H, W)
+    amp = torch.sqrt(even.square() + odd.square() + eps * eps)
 
-    sum_e = even.sum(dim=1)  # (B, O, H, W)
-    sum_o = odd.sum(dim=1)   # (B, O, H, W)
-    sum_a = amp.sum(dim=1)   # (B, O, H, W)
-    max_a = amp.amax(dim=1)  # (B, O, H, W)
+    sum_e = even.sum(dim=1)
+    sum_o = odd.sum(dim=1)
+    sum_a = amp.sum(dim=1)
+    max_a = amp.amax(dim=1)
 
     mean_norm = torch.sqrt(sum_e.square() + sum_o.square() + eps * eps)
     mean_e = sum_e / mean_norm
     mean_o = sum_o / mean_norm
 
-    # Faz sapma ağırlığı: cos(phi - phi_bar) - |sin(phi - phi_bar)|
     dot = even * mean_e.unsqueeze(1) + odd * mean_o.unsqueeze(1)
     cross = (even * mean_o.unsqueeze(1) - odd * mean_e.unsqueeze(1)).abs()
-    energy_per_scale = dot - cross  # (B, S, O, H, W)
-    energy_orient = energy_per_scale.sum(dim=1)  # (B, O, H, W)
+    energy_per_scale = dot - cross
+    energy_orient = energy_per_scale.sum(dim=1)
 
-    # En ince ölçekten (s=0) Rayleigh medyan gürültü eşiği T kestirimi
-    amp_s0 = amp[:, 0].flatten(start_dim=2)  # (B, O, H*W)
-    median_s0 = amp_s0.median(dim=-1).values  # (B, O)
+    amp_s0 = amp[:, 0].flatten(start_dim=2)
+    median_s0 = amp_s0.median(dim=-1).values
     tau = median_s0 / math.sqrt(math.log(4.0))
     total_tau = tau * (1.0 - (1.0 / mult) ** n_scales) / (1.0 - (1.0 / mult))
     mean_noise = total_tau * math.sqrt(math.pi / 2.0)
     sigma_noise = total_tau * math.sqrt((4.0 - math.pi) / 2.0)
-    threshold = (mean_noise + k_noise * sigma_noise).unsqueeze(-1).unsqueeze(-1)  # (B, O, 1, 1)
+    threshold = (mean_noise + k_noise * sigma_noise).unsqueeze(-1).unsqueeze(-1)
 
-    # Frekans yayılım ağırlığı W(x, y)
     width_spread = (sum_a / (max_a + eps) - 1.0) / max(n_scales - 1, 1)
     weight = 1.0 / (1.0 + torch.exp(gain * (cut_off - width_spread)))
 
@@ -204,15 +190,14 @@ class MonochromePhaseCongruency(nn.Module):
         orig_dtype = image.dtype
         x = image.float()
         if x.shape[1] == 3:
-            # ITU-R BT.601 parlaklık dönüşümü
             x = 0.299 * x[:, 0:1] + 0.587 * x[:, 1:2] + 0.114 * x[:, 2:3]
         elif x.shape[1] != 1:
             raise ValueError(f"Beklenen kanal sayısı 1 veya 3, alınan: {x.shape[1]}")
 
         _, _, h, w = x.shape
-        bank = self._get_bank(h, w, x.device, x.dtype)  # (S, O, H, W)
-        img_fft = torch.fft.fft2(x)  # (B, 1, H, W) complex
-        resp = torch.fft.ifft2(img_fft.unsqueeze(2) * bank.unsqueeze(0))  # (B, S, O, H, W)
+        bank = self._get_bank(h, w, x.device, x.dtype)
+        img_fft = torch.fft.fft2(x)
+        resp = torch.fft.ifft2(img_fft.unsqueeze(2) * bank.unsqueeze(0))
         pc = _kovesi_pc_from_quadrature(
             resp.real,
             resp.imag,
@@ -226,7 +211,7 @@ class MonochromePhaseCongruency(nn.Module):
 
 
 class QuaternionPhaseCongruency(nn.Module):
-    """Kuaterniyon / Renk Faz Uyumu (QPC) hesaplayıcısı — [KENDİ YAKLAŞIMIMIZ].
+    """Kuaterniyon / Renk Faz Uyumu (QPC) hesaplayıcısı.
 
     Saf kuaterniyon renk alanı `q(x,y) = R*i + G*j + B*k` (Ell & Sangwine, 2007) üzerinde
     Kovesi (1999) Log-Gabor kuadratür filtre bankasını çalıştırarak 3-kanallı çıktı üretir:
@@ -280,21 +265,16 @@ class QuaternionPhaseCongruency(nn.Module):
         orig_dtype = rgb.dtype
         x = rgb.float()
         _, _, h, w = x.shape
-        bank = self._get_bank(h, w, x.device, x.dtype)  # (S, O, H, W)
+        bank = self._get_bank(h, w, x.device, x.dtype)
 
-        # RGB kanalları için tek seferde toplu 2B FFT ve kuadratür ters FFT
-        # x_fft: (B, 3, H, W) -> resp: (B, 3, S, O, H, W)
         x_fft = torch.fft.fft2(x)
         resp = torch.fft.ifft2(
             x_fft.unsqueeze(2).unsqueeze(3) * bank.unsqueeze(0).unsqueeze(0)
         )
-        e_rgb = resp.real  # (B, 3, S, O, H, W)
-        o_rgb = resp.imag  # (B, 3, S, O, H, W)
+        e_rgb = resp.real
+        o_rgb = resp.imag
 
-        # --- Kanal 0: Birleşik Kuaterniyon Faz Uyumu (q = Ri + Gj + Bk) ---
-        # Gri eksen yansıması + hiperkompleks enerji birleşimi
-        # Akromatik eksen mu = (1, 1, 1)/sqrt(3) boyunca işaretli projeksiyon faz yönünü korur,
-        # genlik ise tüm saf kuaterniyon bileşenlerinden gelir: ||q_{s,o}||_F
+        # Kanal 0: Birleşik Kuaterniyon Faz Uyumu (q = Ri + Gj + Bk)
         e_lum = (e_rgb[:, 0] + e_rgb[:, 1] + e_rgb[:, 2]) / math.sqrt(3.0)
         o_lum = (o_rgb[:, 0] + o_rgb[:, 1] + o_rgb[:, 2]) / math.sqrt(3.0)
         q_amp = torch.sqrt(e_rgb.square().sum(dim=1) + o_rgb.square().sum(dim=1) + self.eps * self.eps)
@@ -306,10 +286,9 @@ class QuaternionPhaseCongruency(nn.Module):
             mult=self.mult,
             k_noise=self.k_noise,
             eps=self.eps,
-        )  # (B, 1, H, W)
+        )
 
-        # --- Kanal 1: Dik Krominans Düzlemi Faz Uyumu (Ell & Sangwine, 2007 dik altuzayı) ---
-        # C1 = (R - G)/sqrt(2), C2 = (R + G - 2B)/sqrt(6)
+        # Kanal 1: Dik Krominans Düzlemi Faz Uyumu (Ell & Sangwine, 2007 dik altuzayı)
         e_c1 = (e_rgb[:, 0] - e_rgb[:, 1]) / math.sqrt(2.0)
         o_c1 = (o_rgb[:, 0] - o_rgb[:, 1]) / math.sqrt(2.0)
         e_c2 = (e_rgb[:, 0] + e_rgb[:, 1] - 2.0 * e_rgb[:, 2]) / math.sqrt(6.0)
@@ -327,25 +306,21 @@ class QuaternionPhaseCongruency(nn.Module):
             mult=self.mult,
             k_noise=self.k_noise,
             eps=self.eps,
-        )  # (B, 1, H, W)
+        )
 
-        # --- Kanal 2: Kromatik Faz Dispersiyonu (DeltaPhi_chrom) [KENDİ YAKLAŞIMIMIZ] ---
-        # Her kanalın birim fazörü u_c = (e_c, o_c) / |z_c|.
-        # Kanallar hizalı fazdaysa ||mean_c(u_c)|| = 1 -> dispersiyon = 0.
-        # Yüz yapıştırma/enterpolasyon sınırında kanal fazları ayrışırsa dispersiyon artar.
-        ch_amp = torch.sqrt(e_rgb.square() + o_rgb.square() + self.eps * self.eps)  # (B, 3, S, O, H, W)
+        # Kanal 2: Kromatik Faz Dispersiyonu (DeltaPhi_chrom)
+        ch_amp = torch.sqrt(e_rgb.square() + o_rgb.square() + self.eps * self.eps)
         unit_e = e_rgb / ch_amp
         unit_o = o_rgb / ch_amp
         mean_unit_len = torch.sqrt(
             unit_e.mean(dim=1).square() + unit_o.mean(dim=1).square() + self.eps * self.eps
         ).clamp(0.0, 1.0)
-        phase_dispersion = 1.0 - mean_unit_len  # (B, S, O, H, W) in [0, 1]
+        phase_dispersion = 1.0 - mean_unit_len
 
-        # Düşük enerjili düz arka planda gürültü fazörlerinin baskın olmaması için genlik kapılaması
         energy_gate = chrom_amp / (q_amp + 0.05)
         disp_num = (phase_dispersion * energy_gate * q_amp).sum(dim=(1, 2), keepdim=False)
         disp_den = q_amp.sum(dim=(1, 2), keepdim=False) + self.eps
-        delta_phi_chrom = (disp_num / disp_den).unsqueeze(1).clamp(0.0, 1.0)  # (B, 1, H, W)
+        delta_phi_chrom = (disp_num / disp_den).unsqueeze(1).clamp(0.0, 1.0)
 
         out = torch.cat([qpc_joint, qpc_chrom, delta_phi_chrom], dim=1)
         return out.to(orig_dtype)
@@ -353,7 +328,6 @@ class QuaternionPhaseCongruency(nn.Module):
     @staticmethod
     def summary_map(qpc_tensor: torch.Tensor) -> torch.Tensor:
         """Görselleştirme için 3-kanallı QPC çıktısını tek kanallı `(B, 1, H, W)` haritaya indirger."""
-        # Birleşik faz uyumu + kromatik faz dispersiyonu vurgusu
         combined = 0.50 * qpc_tensor[:, 0:1] + 0.25 * qpc_tensor[:, 1:2] + 0.25 * qpc_tensor[:, 2:3]
         return combined.clamp(0.0, 1.0)
 
@@ -411,11 +385,10 @@ def compute_qpc_numpy(rgb_uint8: np.ndarray, device: str = "cpu") -> Tuple[np.nd
 
 
 if __name__ == "__main__":
-    print("=== phase_congruency.py Kendi Kendini Test Modu ===")
+    print("=== phase_congruency.py Doğrulama ve Test Modu ===")
     dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Cihaz: {dev}")
 
-    # Sentetik test görüntüsü: Keskin kenar + yapay renk kaymalı (kromatik dispersiyonlu) sınır
     b, h, w = 2, 224, 224
     yy, xx = torch.meshgrid(
         torch.linspace(-1.0, 1.0, h, device=dev),
@@ -423,7 +396,6 @@ if __name__ == "__main__":
         indexing="ij",
     )
     radius = torch.sqrt(xx.square() + yy.square())
-    # Örnek 0: Hizalı akromatik daire sınırı | Örnek 1: R ve B kanalları kaydırılmış sentetik sınır
     aligned_step = (radius < 0.45).float()
     r_shift = (torch.sqrt((xx - 0.025).square() + yy.square()) < 0.45).float()
     b_shift = (torch.sqrt((xx + 0.025).square() + yy.square()) < 0.45).float()

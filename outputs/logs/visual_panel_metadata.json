@@ -1,9 +1,9 @@
 {
-  "experiment": "D3 — QPC ve HER Görsel Doğrulama Paneli",
-  "selection_method": "Deterministik / Algoritmik Seçim (Elle 'en belirgin' kare seçilmemiştir): Celeb-real klasörünün alfabetik ilk videosu (`id0_0000.mp4`) ve aynı kaynak aktör/sahnenin Celeb-synthesis klasöründeki alfabetik ilk karşılığı (`id0_id16_0000.mp4`) alınmış, her iki videonun `0.` karesi (`frame_idx=0`) doğrudan kullanılmıştır.",
+  "experiment": "QPC ve HER Çok Kanallı Görsel Doğrulama Paneli",
+  "selection_method": "Deterministik / Algoritmik Seçim: Celeb-real klasörünün alfabetik ilk videosu (`id0_0000.mp4`) ve aynı kaynak aktör/sahnenin Celeb-synthesis klasöründeki alfabetik ilk karşılığı (`id0_id16_0000.mp4`) alınmış, her iki videonun `0.` karesi (`frame_idx=0`) doğrudan kullanılmıştır.",
   "cherry_picked": false,
   "real_sample": {
-    "video": "/home/a/arastirma_problemleri/datasets/celebdf/Celeb-real/id0_0000.mp4",
+    "video": "datasets/celebdf/Celeb-real/id0_0000.mp4",
     "frame_index": 0,
     "qpc_summary_mean": 0.043067,
     "monochrome_pc_mean": 0.057443,
@@ -23,7 +23,7 @@
     }
   },
   "synthesis_sample": {
-    "video": "/home/a/arastirma_problemleri/datasets/celebdf/Celeb-synthesis/id0_id16_0000.mp4",
+    "video": "datasets/celebdf/Celeb-synthesis/id0_id16_0000.mp4",
     "frame_index": 0,
     "qpc_summary_mean": 0.043048,
     "monochrome_pc_mean": 0.057141,
@@ -42,5 +42,5 @@
       "her_rel_change_crf0_to_crf40_percent": 5.904
     }
   },
-  "figure_path": "/home/a/arastirma_problemleri/kod/outputs/figures/qpc_her_panel.png"
+  "figure_path": "outputs/figures/qpc_her_panel.png"
 }
