@@ -22,6 +22,8 @@ from typing import List, Optional, Tuple
 import cv2
 import numpy as np
 
+from project_paths import get_datasets_root
+
 YUNET_EXPECTED_SHA256 = "8f2383e4dd3cfbb4553ea8718107fc0423210dc964f9f4280604804ed2552fa4"
 VIDEO_EXTENSIONS = {".mp4", ".avi", ".mov", ".mkv", ".webm"}
 
@@ -410,8 +412,9 @@ if __name__ == "__main__":
         sha = verify_sha256(DEFAULT_MODEL_PATH)
         print(f"[OK] YuNet ONNX SHA256 doğrulandı: {sha}")
 
-        default_celeb_real = KOD_ROOT.parent / "datasets" / "celebdf" / "Celeb-real"
-        default_celeb_synth = KOD_ROOT.parent / "datasets" / "celebdf" / "Celeb-synthesis"
+        datasets_root = get_datasets_root()
+        default_celeb_real = datasets_root / "celebdf" / "Celeb-real"
+        default_celeb_synth = datasets_root / "celebdf" / "Celeb-synthesis"
 
         if default_celeb_real.is_dir() and default_celeb_synth.is_dir():
             s_real = run_extraction(

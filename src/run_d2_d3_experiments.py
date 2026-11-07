@@ -32,9 +32,10 @@ import torch
 from face_extractor import DEFAULT_MODEL_PATH, YuNetFaceExtractor, crop_face_with_margin
 from learnable_freq_gate import HarmonicEnergyRatio
 from phase_congruency import MonochromePhaseCongruency, QuaternionPhaseCongruency
+from project_paths import get_datasets_root
 
 KOD_ROOT = Path(__file__).resolve().parents[1]
-REPO_ROOT = KOD_ROOT.parent
+DATASETS_ROOT = get_datasets_root()
 TMP_CRF_DIR = KOD_ROOT / "outputs" / "tmp_crf"
 D2_LOG_PATH = KOD_ROOT / "outputs" / "logs" / "d2_her_compression.json"
 D3_LOG_PATH = KOD_ROOT / "outputs" / "logs" / "d3_panel_metadata.json"
@@ -194,7 +195,7 @@ def run_d2_experiment(
     device: torch.device,
 ) -> Dict[str, Any]:
     """D2 FF++ CRF yeniden kodlama deneyini yürütür ve sonuçları JSON + grafik olarak kaydeder."""
-    ff_base = REPO_ROOT / "datasets" / "ffc32" / "FaceForensics++_C23"
+    ff_base = DATASETS_ROOT / "ffc32" / "FaceForensics++_C23"
     sample_indices = [0, 15, 30, 45, 60, 75, 90, 105]
 
     orig_stems = ["000", "001", "002", "003", "004"]
@@ -396,7 +397,7 @@ def run_d3_visual_panel(
     device: torch.device,
 ) -> Dict[str, Any]:
     """D3 görsel panelini (`outputs/figures/qpc_her_panel.png`) üretir ve meta verisini loglar."""
-    celeb_base = REPO_ROOT / "datasets" / "celebdf"
+    celeb_base = DATASETS_ROOT / "celebdf"
     real_vid = celeb_base / "Celeb-real" / "id0_0000.mp4"
     fake_vid = celeb_base / "Celeb-synthesis" / "id0_id16_0000.mp4"
     selected_frame_idx = 0

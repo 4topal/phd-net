@@ -1,31 +1,80 @@
 #!/usr/bin/env bash
-# Podman GPU çalıştırma sarmalayıcısı (Fedora + SELinux Enforcing + NVIDIA CDI)
-# Kullanım: ./run.sh src/<modul>.py [argümanlar...]
+# Ortak Podman imajında CPU (varsayılan) veya isteğe bağlı NVIDIA GPU çalıştırıcısı.
 set -euo pipefail
 
-KOD_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_DIR="$(cd "${KOD_DIR}/.." && pwd)"
-DATASETS_DIR="${REPO_DIR}/datasets"
-IMAGE="docker.io/pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime"
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+IMAGE="${PHD_NET_IMAGE:-localhost/phd-net-dev:latest}"
+USE_GPU=0
+BUILD_IMAGE=0
 
-if [[ $# -lt 1 ]]; then
-    echo "Kullanım: ./run.sh src/<modul>.py [argümanlar...]" >&2
-    exit 1
+while (($#)); do
+    case "$1" in
+        --gpu)
+            USE_GPU=1
+            shift
+            ;;
+        --build)
+            BUILD_IMAGE=1
+            shift
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+if (($# < 1)); then
+    echo "Kullanım: ./run.sh [--build] [--gpu] src/<modul>.py [argümanlar...]" >&2
+    exit 2
 fi
 
-MOUNT_ARGS=(
-    -v "${KOD_DIR}:${KOD_DIR}:z"
-)
+if ! command -v podman >/dev/null 2>&1; then
+    echo "Podman bulunamadı. Önce Podman'ı kurup çalışır duruma getirin." >&2
+    exit 127
+fi
 
-if [[ -d "${DATASETS_DIR}" ]]; then
-    MOUNT_ARGS+=(-v "${DATASETS_DIR}:${DATASETS_DIR}:ro")
+if [[ -n "${PHD_NET_DATASETS:-}" ]]; then
+    DATASETS_HOST="${PHD_NET_DATASETS}"
+    if [[ "${DATASETS_HOST}" == "~/"* ]]; then
+        DATASETS_HOST="${HOME}/${DATASETS_HOST#\~/}"
+    fi
+elif [[ -d "${PROJECT_DIR}/datasets" ]]; then
+    DATASETS_HOST="${PROJECT_DIR}/datasets"
+elif [[ -d "${PROJECT_DIR}/../datasets" ]]; then
+    DATASETS_HOST="${PROJECT_DIR}/../datasets"
+else
+    DATASETS_HOST="${PROJECT_DIR}/datasets"
+fi
+
+if [[ -n "${PHD_NET_DATASETS:-}" && ! -d "${DATASETS_HOST}" ]]; then
+    echo "PHD_NET_DATASETS dizini bulunamadı: ${DATASETS_HOST}" >&2
+    exit 2
+fi
+if [[ -d "${DATASETS_HOST}" ]]; then
+    DATASETS_HOST="$(cd "${DATASETS_HOST}" && pwd)"
+fi
+
+if ((BUILD_IMAGE)) || ! podman image exists "${IMAGE}"; then
+    podman build --file "${PROJECT_DIR}/Containerfile" --tag "${IMAGE}" "${PROJECT_DIR}"
+fi
+
+MOUNT_ARGS=(--volume "${PROJECT_DIR}:/workspace:z")
+DATASETS_CONTAINER="/workspace/datasets"
+if [[ -d "${DATASETS_HOST}" ]]; then
+    MOUNT_ARGS+=(--volume "${DATASETS_HOST}:/datasets:ro,z")
+    DATASETS_CONTAINER="/datasets"
+fi
+
+GPU_ARGS=()
+if ((USE_GPU)); then
+    GPU_ARGS+=(--device nvidia.com/gpu=all)
 fi
 
 exec podman run --rm \
-    --device nvidia.com/gpu=all \
+    "${GPU_ARGS[@]}" \
     "${MOUNT_ARGS[@]}" \
-    -w "${KOD_DIR}" \
-    -e "PYTHONPATH=${KOD_DIR}/src:${KOD_DIR}" \
-    -e "MPLCONFIGDIR=/tmp/matplotlib" \
+    --workdir /workspace \
+    --env PYTHONPATH=/workspace/src:/workspace \
+    --env "PHD_NET_DATASETS=${DATASETS_CONTAINER}" \
     "${IMAGE}" \
     python3 "$@"

@@ -6,9 +6,20 @@ set -euo pipefail
 
 KOD_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "${KOD_DIR}/.." && pwd)"
-DATASETS_DIR="${REPO_DIR}/datasets"
+if [[ -n "${PHD_NET_DATASETS:-}" ]]; then
+    DATASETS_DIR="${PHD_NET_DATASETS}"
+elif [[ -d "${KOD_DIR}/datasets" ]]; then
+    DATASETS_DIR="${KOD_DIR}/datasets"
+else
+    DATASETS_DIR="${REPO_DIR}/datasets"
+fi
 OUT_TMP="${KOD_DIR}/outputs/tmp_crf"
 FFMPEG_IMAGE="localhost/repo-lab/ister3-preprocess:v1"
+
+if [[ ! -d "${DATASETS_DIR}" ]]; then
+    echo "Veri seti dizini bulunamadı: ${DATASETS_DIR}. PHD_NET_DATASETS ayarlayın." >&2
+    exit 2
+fi
 
 mkdir -p "${OUT_TMP}"
 
