@@ -264,7 +264,10 @@ class LearnableFreqGate(nn.Module):
         )
 
         total_gate = (freq_gate * band_weight_map).view(1, c, 1, 1, 8, 8)
-        gated_log_dct = torch.log1p(dct_blocks.abs() * total_gate)
+        # Logaritma-sonrası kapılama (Kusur 6 düzeltmesi):
+        # log1p(|DCT|) * total_gate sıralaması ile öğrenilebilir kapı BatchNorm2d
+        # tarafından sabit toplamsal kayma (ln g) olarak yutulmaz.
+        gated_log_dct = torch.log1p(dct_blocks.abs()) * total_gate
         flat_dct = gated_log_dct.permute(0, 1, 4, 5, 2, 3).reshape(b, c * 64, hb, wb)
 
         her_map = her_stats["her_map"]

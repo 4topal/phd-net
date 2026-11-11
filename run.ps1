@@ -1,4 +1,4 @@
-$ErrorActionPreference = 'Stop'
+﻿$ErrorActionPreference = 'Stop'
 $Build = $false
 $Gpu = $false
 $Arguments = [System.Collections.Generic.List[string]]::new()
@@ -63,6 +63,7 @@ if ($Build -or -not $ImageExists) {
 
 $PodmanArgs = @(
     'run', '--rm',
+    '--shm-size', '4g',
     '--volume', "${ProjectDir}:/workspace",
     '--workdir', '/workspace',
     '--env', 'PYTHONPATH=/workspace/src:/workspace'
@@ -76,8 +77,25 @@ if (Test-Path -LiteralPath $DatasetsHost -PathType Container) {
 }
 $PodmanArgs += @('--env', "PHD_NET_DATASETS=$DatasetsContainer")
 
+$CelebdfHost = $null
+if ($env:PHD_NET_CELEBDF) {
+    $CelebdfHost = $env:PHD_NET_CELEBDF
+} elseif (-not (Test-Path -LiteralPath (Join-Path $DatasetsHost 'celebdf_v2\Celeb-real') -PathType Container) -and (Test-Path -LiteralPath 'D:\celeb-df_v2\Celeb-real' -PathType Container)) {
+    $CelebdfHost = 'D:\celeb-df_v2'
+}
+
+if ($CelebdfHost -and (Test-Path -LiteralPath $CelebdfHost -PathType Container)) {
+    $CelebdfResolved = (Resolve-Path -LiteralPath $CelebdfHost).ProviderPath
+    $PodmanArgs += @('--volume', "${CelebdfResolved}:/datasets_celebdf:ro")
+    $PodmanArgs += @('--env', 'PHD_NET_CELEBDF=/datasets_celebdf')
+}
+
 if ($Gpu) {
-    $PodmanArgs += @('--device', 'nvidia.com/gpu=all')
+    $PodmanArgs += @(
+        '--device', '/dev/dxg',
+        '--volume', '/usr/lib/wsl:/usr/lib/wsl:ro',
+        '--env', 'LD_LIBRARY_PATH=/usr/lib/wsl/lib:/opt/conda/lib'
+    )
 }
 
 $ContainerScript = $ScriptPath.Replace('\', '/')

@@ -10,6 +10,9 @@ build/
 # Datasets and Processed Faces (never track raw video/image frames)
 data/
 datasets/
+outputs/faces_ffpp/
+outputs/faces_celebdf/
+outputs/checkpoints/
 *.mp4
 *.avi
 *.mkv
@@ -22,6 +25,7 @@ checkpoints/
 *.pth
 *.ckpt
 *.safetensors
+models/*.onnx
 !models/face_detection_yunet_2023mar.onnx
 
 # Environment and IDE

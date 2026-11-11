@@ -7,3 +7,5 @@ matplotlib==3.11.2
 pillow==10.2.0
 tqdm==4.66.5
 PyYAML==6.0.2
+onnxruntime-gpu==1.22.0
+scikit-learn==1.9.1

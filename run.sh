@@ -65,16 +65,36 @@ if [[ -d "${DATASETS_HOST}" ]]; then
     DATASETS_CONTAINER="/datasets"
 fi
 
+CELEBDF_HOST=""
+if [[ -n "${PHD_NET_CELEBDF:-}" ]]; then
+    CELEBDF_HOST="${PHD_NET_CELEBDF}"
+elif [[ ! -d "${DATASETS_HOST}/celebdf_v2/Celeb-real" ]]; then
+    if [[ -d "D:/celeb-df_v2/Celeb-real" ]]; then
+        CELEBDF_HOST="D:/celeb-df_v2"
+    elif [[ -d "/d/celeb-df_v2/Celeb-real" ]]; then
+        CELEBDF_HOST="/d/celeb-df_v2"
+    fi
+fi
+
+EXTRA_ENV_ARGS=()
+if [[ -n "${CELEBDF_HOST}" && -d "${CELEBDF_HOST}" ]]; then
+    CELEBDF_HOST="$(cd "${CELEBDF_HOST}" && pwd)"
+    MOUNT_ARGS+=(--volume "${CELEBDF_HOST}:/datasets_celebdf:ro,z")
+    EXTRA_ENV_ARGS+=(--env "PHD_NET_CELEBDF=/datasets_celebdf")
+fi
+
 GPU_ARGS=()
 if ((USE_GPU)); then
     GPU_ARGS+=(--device nvidia.com/gpu=all)
 fi
 
 exec podman run --rm \
+    --shm-size 4g \
     "${GPU_ARGS[@]}" \
     "${MOUNT_ARGS[@]}" \
     --workdir /workspace \
     --env PYTHONPATH=/workspace/src:/workspace \
     --env "PHD_NET_DATASETS=${DATASETS_CONTAINER}" \
+    "${EXTRA_ENV_ARGS[@]}" \
     "${IMAGE}" \
     python3 "$@"

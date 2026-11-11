@@ -1,7 +1,8 @@
-FROM docker.io/pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime
+FROM docker.io/pytorch/pytorch:2.7.0-cuda12.8-cudnn9-runtime
 
 ENV PYTHONUNBUFFERED=1 \
-    MPLCONFIGDIR=/tmp/matplotlib
+    MPLCONFIGDIR=/tmp/matplotlib \
+    LD_LIBRARY_PATH=/usr/lib/wsl/lib:/opt/conda/lib
 
 WORKDIR /workspace
 
