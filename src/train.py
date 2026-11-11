@@ -278,6 +278,12 @@ def train_one_epoch(
         running_dice += dice_val
         total_steps += 1
 
+        if total_steps % 200 == 0:
+            logger.info(
+                "  -> Adım [%d/%d] | Anlık Kayıp: Toplam=%.4f, BCE=%.4f, CCM=%.4f, Dice=%.4f",
+                total_steps, len(dataloader), float(loss.detach().item()), bce_val, ccm_val, dice_val
+            )
+
     steps = max(1, total_steps)
     return {
         "loss": round(running_loss / steps, 4),
