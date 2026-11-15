@@ -1,6 +1,6 @@
 {
   "environment": {
-    "timestamp_utc": "2026-11-11T00:10:02.222690+00:00",
+    "timestamp_utc": "2026-11-14T08:47:03.819143+00:00",
     "platform": "Linux-6.18.58.1-microsoft-standard-WSL2-x86_64-with-glibc2.35",
     "python_version": "3.11.12",
     "torch_version": "2.7.0+cu128",
@@ -16,8 +16,8 @@
       224,
       224
     ],
-    "warmup_iterations": 50,
-    "timed_iterations": 250
+    "warmup_iterations": 5,
+    "timed_iterations": 200
   },
   "models": {
     "phd_net": {
@@ -25,84 +25,84 @@
       "training_status": "EĞİTİLMEMİŞ (Mimari ve çıkarım kıyaslama doğrulama aşaması)",
       "localization_head_status": "Zemin gerçekliği yerelleştirme maskeleri sağlanmadığında Dice/BCE yerelleştirme kaybı devre dışı bırakılır.",
       "parameters": {
-        "total": 3803678,
-        "trainable": 3803678,
-        "total_millions": 3.8037,
+        "total": 3002555,
+        "trainable": 3002555,
+        "total_millions": 3.0026,
         "target_total": 3800000,
-        "diff_from_target": 3678,
-        "diff_percent": 0.1
+        "diff_from_target": -797445,
+        "diff_percent": -20.99
       },
       "preprocessing_separate": {
         "qpc_only": {
-          "latency_median_ms": 4.072,
-          "latency_mean_ms": 4.8087,
-          "latency_p95_ms": 11.075,
-          "latency_min_ms": 2.8013,
-          "latency_max_ms": 18.8711,
-          "fps_from_median": 245.58,
-          "max_memory_allocated_bytes": 808875520,
-          "max_memory_allocated_mb": 771.404
+          "latency_median_ms": 2.8353,
+          "latency_mean_ms": 2.8795,
+          "latency_p95_ms": 3.2308,
+          "latency_min_ms": 2.5481,
+          "latency_max_ms": 3.3546,
+          "fps_from_median": 352.7,
+          "max_memory_allocated_bytes": 548449280,
+          "max_memory_allocated_mb": 523.042
         },
         "block_dct_8x8_only": {
-          "latency_median_ms": 0.1557,
-          "latency_mean_ms": 0.1831,
-          "latency_p95_ms": 0.3761,
-          "latency_min_ms": 0.0499,
-          "latency_max_ms": 0.9776,
-          "fps_from_median": 6422.77,
-          "max_memory_allocated_bytes": 580391936,
-          "max_memory_allocated_mb": 553.505
+          "latency_median_ms": 0.0852,
+          "latency_mean_ms": 0.0926,
+          "latency_p95_ms": 0.1474,
+          "latency_min_ms": 0.0359,
+          "latency_max_ms": 0.6471,
+          "fps_from_median": 11741.5,
+          "max_memory_allocated_bytes": 319393792,
+          "max_memory_allocated_mb": 304.598
         },
         "qpc_plus_dct_combined": {
-          "latency_median_ms": 3.8436,
-          "latency_mean_ms": 3.9676,
-          "latency_p95_ms": 5.2063,
-          "latency_min_ms": 3.0052,
-          "latency_max_ms": 7.3569,
-          "fps_from_median": 260.17,
-          "max_memory_allocated_bytes": 809477632,
-          "max_memory_allocated_mb": 771.978
+          "latency_median_ms": 2.732,
+          "latency_mean_ms": 2.7615,
+          "latency_p95_ms": 3.0669,
+          "latency_min_ms": 2.4547,
+          "latency_max_ms": 3.5433,
+          "fps_from_median": 366.04,
+          "max_memory_allocated_bytes": 549051392,
+          "max_memory_allocated_mb": 523.616
         }
       },
       "model_forward_only": {
-        "latency_median_ms": 7.5954,
-        "latency_mean_ms": 7.6842,
-        "latency_p95_ms": 10.434,
-        "latency_min_ms": 5.2195,
-        "latency_max_ms": 12.2076,
-        "fps_from_median": 131.66,
-        "max_memory_allocated_bytes": 597957120,
-        "max_memory_allocated_mb": 570.256
+        "latency_median_ms": 6.1175,
+        "latency_mean_ms": 6.6319,
+        "latency_p95_ms": 10.303,
+        "latency_min_ms": 4.8609,
+        "latency_max_ms": 17.2105,
+        "fps_from_median": 163.46,
+        "max_memory_allocated_bytes": 328061440,
+        "max_memory_allocated_mb": 312.864
       },
       "model_forward_nomask": {
-        "latency_median_ms": 7.7965,
-        "latency_mean_ms": 9.2,
-        "latency_p95_ms": 17.9415,
-        "latency_min_ms": 4.9655,
-        "latency_max_ms": 38.8828,
-        "fps_from_median": 128.26,
-        "max_memory_allocated_bytes": 596177408,
-        "max_memory_allocated_mb": 568.559
+        "latency_median_ms": 5.8208,
+        "latency_mean_ms": 6.6425,
+        "latency_p95_ms": 10.7353,
+        "latency_min_ms": 4.5045,
+        "latency_max_ms": 15.443,
+        "fps_from_median": 171.8,
+        "max_memory_allocated_bytes": 322228224,
+        "max_memory_allocated_mb": 307.301
       },
       "end_to_end_with_preprocessing": {
-        "latency_median_ms": 11.716,
-        "latency_mean_ms": 12.0027,
-        "latency_p95_ms": 16.4195,
-        "latency_min_ms": 7.4516,
-        "latency_max_ms": 29.5634,
-        "fps_from_median": 85.35,
-        "max_memory_allocated_bytes": 810884096,
-        "max_memory_allocated_mb": 773.319
+        "latency_median_ms": 8.2641,
+        "latency_mean_ms": 9.1802,
+        "latency_p95_ms": 14.1426,
+        "latency_min_ms": 7.274,
+        "latency_max_ms": 18.6753,
+        "fps_from_median": 121.01,
+        "max_memory_allocated_bytes": 548450816,
+        "max_memory_allocated_mb": 523.043
       },
       "end_to_end_nomask": {
-        "latency_median_ms": 13.277,
-        "latency_mean_ms": 16.1642,
-        "latency_p95_ms": 32.3565,
-        "latency_min_ms": 7.278,
-        "latency_max_ms": 51.1657,
-        "fps_from_median": 75.32,
-        "max_memory_allocated_bytes": 810683392,
-        "max_memory_allocated_mb": 773.128
+        "latency_median_ms": 7.6334,
+        "latency_mean_ms": 8.3964,
+        "latency_p95_ms": 12.2776,
+        "latency_min_ms": 6.9101,
+        "latency_max_ms": 14.1032,
+        "fps_from_median": 131.0,
+        "max_memory_allocated_bytes": 548250112,
+        "max_memory_allocated_mb": 522.852
       },
       "target_comparison": {
         "targets": {
@@ -113,16 +113,16 @@
         },
         "model_only_vs_target": {
           "latency_meets_target": true,
-          "latency_delta_ms": -0.9046,
+          "latency_delta_ms": -2.3825,
           "fps_meets_target": true,
-          "fps_delta": 16.66,
+          "fps_delta": 48.46,
           "vram_meets_target": true
         },
         "end_to_end_vs_target": {
-          "latency_meets_target": false,
-          "latency_delta_ms": 3.216,
-          "fps_meets_target": false,
-          "fps_delta": -29.65,
+          "latency_meets_target": true,
+          "latency_delta_ms": -0.2359,
+          "fps_meets_target": true,
+          "fps_delta": 6.01,
           "vram_meets_target": true
         }
       }

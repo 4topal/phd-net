@@ -355,11 +355,13 @@ class DeepfakeFaceDataset(Dataset):
         is_train: bool = False,
         target_size: int = 224,
         jpeg_sim_prob: float = 0.30,
+        sbi_prob: float = 0.35,
     ) -> None:
         super().__init__()
         self.target_size = target_size
         self.is_train = is_train
         self.jpeg_sim_prob = jpeg_sim_prob
+        self.sbi_prob = sbi_prob
 
         # 1. Örnekleri topla
         raw_samples: List[Dict[str, Any]] = []
@@ -386,7 +388,7 @@ class DeepfakeFaceDataset(Dataset):
                 manip = str(s.get("manipulation", ""))
                 if ds_name == "celebdf" or manip.startswith("celeb") or manip in ("Celeb-real", "YouTube-real", "Celeb-synthesis"):
                     continue
-                if (split == "test" and manip == "DeepFakeDetection") or is_video_in_split(split_dict, vid):
+                if (split == "test" and manip in ("DeepFakeDetection", "actors")) or is_video_in_split(split_dict, vid):
                     filtered.append(s)
             raw_samples = filtered
 
@@ -400,11 +402,18 @@ class DeepfakeFaceDataset(Dataset):
 
         if manipulations is not None:
             m_set = set(manipulations)
-            allowed_real = {"youtube", "real"}
-            if "DeepFakeDetection" in m_set:
-                allowed_real.add("actors")
-            if any(m.lower().startswith("celeb") or m in ("Celeb-real", "YouTube-real", "Celeb-synthesis") for m in m_set):
-                allowed_real.update({"Celeb-real", "YouTube-real", "celebdf_real"})
+            known_reals = {"youtube", "real", "actors", "Celeb-real", "YouTube-real", "celebdf_real"}
+            fake_manips = {m for m in m_set if m not in known_reals}
+
+            if fake_manips == {"DeepFakeDetection"} or list(m_set) == ["DeepFakeDetection"]:
+                allowed_real = {"actors"}
+            else:
+                allowed_real = {"youtube", "real"}
+                if "DeepFakeDetection" in m_set:
+                    allowed_real.add("actors")
+                if any(m.lower().startswith("celeb") or m in ("Celeb-real", "YouTube-real", "Celeb-synthesis") for m in m_set):
+                    allowed_real.update({"Celeb-real", "YouTube-real", "celebdf_real"})
+
             raw_samples = [
                 s for s in raw_samples
                 if s.get("manipulation") in m_set
@@ -451,15 +460,18 @@ class DeepfakeFaceDataset(Dataset):
             root / "manifest.json",
         ]
         loaded_from_manifests: List[Dict[str, Any]] = []
-        seen_paths = set()
+        loaded_manifest_names = set()
         for mc in manifest_candidates:
             if mc.is_file():
+                if mc.name == "manifest.json" and loaded_manifest_names:
+                    continue
                 items = self._load_manifest_file(mc)
-                for it in items:
-                    rp = it.get("rgb_path")
-                    if rp and Path(rp).is_file():
-                        loaded_from_manifests.append(it)
-                        seen_paths.add(str(Path(rp).resolve()))
+                if items:
+                    first_rp = items[0].get("rgb_path")
+                    if first_rp and not Path(first_rp).is_file():
+                        logger.warning("Manifestteki ilk dosya bulunamadi (%s): %s", mc, first_rp)
+                    loaded_from_manifests.extend(items)
+                    loaded_manifest_names.add(mc.name)
         if loaded_from_manifests:
             return loaded_from_manifests
 
@@ -527,21 +539,123 @@ class DeepfakeFaceDataset(Dataset):
     def __len__(self) -> int:
         return len(self.samples)
 
+    def _generate_sbi(self, rgb_np: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """Gerçek yüzden çalışma anında Self-Blended Images (SBI) sahte örneği üretir.
+
+        İki kopyadan biri hafif renk/parlaklık/kontrast kayması ve afin/ölçek bükmesi ile
+        artırılır, ardından yumuşak eliptik/poligonal maske (M in [0, 1]) ile harmanlanır.
+        """
+        h, w = rgb_np.shape[:2]
+        I_base = rgb_np.copy()
+
+        # Kopya 1 (Taban): Hafif varyasyon
+        a1 = 1.0 + random.uniform(-0.06, 0.06)
+        b1 = random.uniform(-10.0, 10.0)
+        copy1 = np.clip(I_base.astype(np.float32) * a1 + b1, 0.0, 255.0)
+
+        # Kopya 2 (Kaynak / Bükülmüş): Afin/ölçek bükme + parlaklık/kontrast/renk kayması
+        cx, cy = w / 2.0, h / 2.0
+        angle = random.uniform(-10.0, 10.0)
+        scale = random.uniform(0.92, 1.08)
+        tx = random.uniform(-8.0, 8.0)
+        ty = random.uniform(-8.0, 8.0)
+        M_aff = cv2.getRotationMatrix2D((cx, cy), angle, scale)
+        M_aff[0, 2] += tx
+        M_aff[1, 2] += ty
+        warped2 = cv2.warpAffine(I_base, M_aff, (w, h), borderMode=cv2.BORDER_REFLECT)
+
+        a2 = 1.0 + random.uniform(-0.15, 0.15)
+        b2 = random.uniform(-20.0, 20.0)
+        copy2 = np.clip(warped2.astype(np.float32) * a2 + b2, 0.0, 255.0)
+
+        # Renk tonu ve doygunluk kayması
+        hsv2 = cv2.cvtColor(copy2.astype(np.uint8), cv2.COLOR_RGB2HSV).astype(np.float32)
+        hsv2[:, :, 0] = (hsv2[:, :, 0] + random.uniform(-10.0, 10.0)) % 180.0
+        hsv2[:, :, 1] = np.clip(hsv2[:, :, 1] * random.uniform(0.85, 1.15), 0.0, 255.0)
+        copy2_final = cv2.cvtColor(hsv2.astype(np.uint8), cv2.COLOR_HSV2RGB).astype(np.float32)
+
+        # Rastgele yumuşak eliptik veya çokgen yüz maskesi (M in [0, 1]^(H, W))
+        mask_raw = np.zeros((h, w), dtype=np.uint8)
+        if random.random() < 0.5:
+            # Eliptik maske
+            el_cx = int(cx + random.uniform(-0.08, 0.08) * w)
+            el_cy = int(cy + random.uniform(-0.08, 0.08) * h)
+            rx = int(random.uniform(0.22, 0.38) * w)
+            ry = int(random.uniform(0.26, 0.44) * h)
+            el_angle = random.uniform(-25.0, 25.0)
+            cv2.ellipse(mask_raw, (el_cx, el_cy), (rx, ry), el_angle, 0, 360, 255, -1)
+        else:
+            # Rastgele çokgensel maske (6-10 köşe)
+            n_pts = random.randint(6, 10)
+            poly_cx = cx + random.uniform(-0.06, 0.06) * w
+            poly_cy = cy + random.uniform(-0.06, 0.06) * h
+            angles = sorted([random.uniform(0, 2 * math.pi) for _ in range(n_pts)])
+            pts = []
+            for ang in angles:
+                r = random.uniform(0.22, 0.42) * min(h, w)
+                px = int(np.clip(poly_cx + r * math.cos(ang), 0, w - 1))
+                py = int(np.clip(poly_cy + r * math.sin(ang), 0, h - 1))
+                pts.append([px, py])
+            pts_arr = np.array(pts, dtype=np.int32).reshape((-1, 1, 2))
+            cv2.fillPoly(mask_raw, [pts_arr], 255)
+
+        # Maskeyi yumuşat (Gauss bulanıklaştırma) -> M in [0.0, 1.0]
+        ksize = random.choice([15, 21, 27, 33])
+        sigma = random.uniform(4.0, 10.0)
+        mask_smooth = cv2.GaussianBlur(mask_raw, (ksize, ksize), sigma)
+        M = mask_smooth.astype(np.float32) / 255.0
+
+        # İki kopyayı M ile harmanla
+        M_3d = M[:, :, np.newaxis]
+        blended = (1.0 - M_3d) * copy1 + M_3d * copy2_final
+        blended_rgb = np.clip(blended, 0.0, 255.0).astype(np.uint8)
+
+        # Adli ikili maske: mask = (M > 0.1)
+        mask_binary = ((M > 0.1).astype(np.float32) * 255.0).astype(np.uint8)
+
+        return blended_rgb, mask_binary
+
     def _apply_augmentations(
         self, rgb_np: np.ndarray, mask_np: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray]:
-        """Eğitim veri artırmaları: senkronize çevirme, jitter, JPEG simülasyonu."""
+        """Eğitim veri artırmaları: senkronize çevirme, crop, jitter, blur, JPEG, erasing."""
+        h, w = rgb_np.shape[:2]
+
         # 1. Senkronize Yatay Çevirme (%50 olasılık)
         if random.random() < 0.5:
             rgb_np = np.fliplr(rgb_np).copy()
             mask_np = np.fliplr(mask_np).copy()
 
-        # 2. Hafif Parlaklık ve Kontrast Jitter (±10%)
+        # 2. Senkronize RandomResizedCrop (ölçek: 0.82 - 1.0)
+        scale = random.uniform(0.82, 1.0)
+        crop_size = max(16, min(h, w, int(round(min(h, w) * math.sqrt(scale)))))
+        if crop_size < min(h, w):
+            top = random.randint(0, h - crop_size)
+            left = random.randint(0, w - crop_size)
+            rgb_crop = rgb_np[top : top + crop_size, left : left + crop_size]
+            mask_crop = mask_np[top : top + crop_size, left : left + crop_size]
+            rgb_np = cv2.resize(rgb_crop, (w, h), interpolation=cv2.INTER_LINEAR)
+            mask_np = cv2.resize(mask_crop, (w, h), interpolation=cv2.INTER_NEAREST)
+
+        # 3. Hafif Parlaklık ve Kontrast Jitter (±10%)
         alpha = 1.0 + random.uniform(-0.10, 0.10)  # Kontrast
         beta = random.uniform(-0.10, 0.10) * 255.0  # Parlaklık
         rgb_np = np.clip(rgb_np.astype(np.float32) * alpha + beta, 0.0, 255.0).astype(np.uint8)
 
-        # 3. Bellek-İçi Rastgele JPEG Sıkıştırma Simülasyonu (prob=jpeg_sim_prob)
+        # 4. Hafif ColorJitter (Doygunluk ve Renk Özü / Saturation & Hue) (p=0.50)
+        if random.random() < 0.50:
+            hsv = cv2.cvtColor(rgb_np, cv2.COLOR_RGB2HSV).astype(np.float32)
+            hsv[:, :, 0] = (hsv[:, :, 0] + random.uniform(-8.0, 8.0)) % 180.0
+            hsv[:, :, 1] = np.clip(hsv[:, :, 1] * random.uniform(0.85, 1.15), 0.0, 255.0)
+            rgb_np = cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2RGB)
+
+        # 5. GaussianBlur (p=0.20, 3x3 veya 5x5)
+        if random.random() < 0.20:
+            ksize = random.choice([3, 5])
+            sigma = random.uniform(0.5, 1.5)
+            rgb_np = cv2.GaussianBlur(rgb_np, (ksize, ksize), sigma)
+
+        # 6. Bellek-İçi Rastgele JPEG Sıkıştırma Simülasyonu (prob=jpeg_sim_prob)
         if random.random() < self.jpeg_sim_prob:
             quality = random.randint(50, 95)
             # OpenCV BGR sırasıyla kodlar
@@ -551,6 +665,16 @@ class DeepfakeFaceDataset(Dataset):
                 decoded = cv2.imdecode(encoded, cv2.IMREAD_COLOR)
                 if decoded is not None:
                     rgb_np = cv2.cvtColor(decoded, cv2.COLOR_BGR2RGB)
+
+        # 7. Senkronize RandomErasing / Cutout (p=0.20, küçük yamalar)
+        if random.random() < 0.20:
+            patch_h = random.randint(max(8, int(0.08 * h)), max(16, int(0.22 * h)))
+            patch_w = random.randint(max(8, int(0.08 * w)), max(16, int(0.22 * w)))
+            py = random.randint(0, h - patch_h)
+            px = random.randint(0, w - patch_w)
+            noise_patch = np.random.randint(0, 256, (patch_h, patch_w, 3), dtype=np.uint8)
+            rgb_np[py : py + patch_h, px : px + patch_w] = noise_patch
+            mask_np[py : py + patch_h, px : px + patch_w] = 0
 
         return rgb_np, mask_np
 
@@ -603,16 +727,23 @@ class DeepfakeFaceDataset(Dataset):
             else:
                 has_mask = False
 
-        # 3. Eğitim Artırmaları
+        # 3. SBI (Self-Blended Images) sahte üretimi (Eğitim kipi ve gerçek örnekler için)
+        if self.is_train and label == 0 and random.random() < self.sbi_prob:
+            rgb_np, mask_np = self._generate_sbi(rgb_np)
+            label = 1
+            manip = "SBI"
+            has_mask = True
+
+        # 4. Eğitim Artırmaları
         if self.is_train:
             rgb_np, mask_np = self._apply_augmentations(rgb_np, mask_np)
 
-        # 4. PyTorch Tensörlerine Dönüştür
-        # RGB: (H, W, 3) uint8 -> (3, H, W) float32 in [0.0, 1.0]
+        # 5. PyTorch Tensörlerine Dönüştür
+        # RGB: (H, W, 3) uint8 -> (3, H, W) float32 in [0.0, 1.0] (ImageNet normalizasyonu PHDNet içinde yapilacak)
         rgb_tensor = torch.from_numpy(rgb_np).permute(2, 0, 1).float().div(255.0)
 
         # Maske: (H, W) uint8 -> (1, H, W) float32 in {0.0, 1.0}
-        mask_tensor = torch.from_numpy(mask_np).unsqueeze(0).float().div(255.0)
+        mask_tensor = (torch.from_numpy(mask_np).unsqueeze(0).float().div(255.0) > 0.1).float()
 
         return {
             "rgb": rgb_tensor,
@@ -653,18 +784,28 @@ class BalancedBatchSampler(Sampler):
         self.seed = seed
         self.half_b = batch_size // 2
 
-        # Örnek indekslerini ayrıştır
+        # Örnek indekslerini ayrıştır (Disk I/O yapmadan, doğrudan bellekteki metadata üzerinden hızlı okuma)
         self.real_indices: List[int] = []
         self.fake_groups: Dict[str, List[int]] = defaultdict(list)
 
-        for i in range(len(dataset)):  # type: ignore[arg-type]
-            sample = dataset[i]
-            lbl = sample["label"]
-            manip = sample.get("manipulation", "fake")
-            if lbl == 0:
-                self.real_indices.append(i)
-            else:
-                self.fake_groups[manip].append(i)
+        metadata_list = getattr(dataset, "samples", None) or getattr(dataset, "items", None)
+        if metadata_list is not None and len(metadata_list) == len(dataset):
+            for i, item in enumerate(metadata_list):
+                lbl = int(item.get("label", 0))
+                manip = item.get("manipulation", "fake")
+                if lbl == 0:
+                    self.real_indices.append(i)
+                else:
+                    self.fake_groups[manip].append(i)
+        else:
+            for i in range(len(dataset)):  # type: ignore[arg-type]
+                sample = dataset[i]
+                lbl = sample["label"]
+                manip = sample.get("manipulation", "fake")
+                if lbl == 0:
+                    self.real_indices.append(i)
+                else:
+                    self.fake_groups[manip].append(i)
 
         if not self.real_indices:
             raise ValueError("BalancedBatchSampler: Veri setinde hiç Gerçek (label=0) örnek bulunamadı!")
@@ -845,5 +986,44 @@ if __name__ == "__main__":
     n_fake = sum(1 for l in labels_b0 if l == 1)
     print(f"     Batch 0 Dağılımı: {n_real} Real / {n_fake} Fake (tam %50/%50 denge)")
     assert n_real == 8 and n_fake == 8
+
+    # 4. Split ve Manipulasyon Filtreleme Testi (actors ve DFD)
+    dummy_samples = [
+        {"video_id": "000", "label": 0, "manipulation": "youtube", "compression": "c23", "rgb_np": np.zeros((224, 224, 3), dtype=np.uint8)},
+        {"video_id": "actor_01", "label": 0, "manipulation": "actors", "compression": "c23", "rgb_np": np.zeros((224, 224, 3), dtype=np.uint8)},
+        {"video_id": "dfd_01", "label": 1, "manipulation": "DeepFakeDetection", "compression": "c23", "rgb_np": np.zeros((224, 224, 3), dtype=np.uint8)},
+        {"video_id": "000_003", "label": 1, "manipulation": "Deepfakes", "compression": "c23", "rgb_np": np.zeros((224, 224, 3), dtype=np.uint8)},
+    ]
+    # DFD testi: allowed_real yalnizca actors olmali, youtube filtrelenmeli
+    dfd_ds = DeepfakeFaceDataset(
+        samples=dummy_samples,
+        split="test",
+        manipulations=["DeepFakeDetection"],
+    )
+    dfd_manips = {s["manipulation"] for s in dfd_ds.samples}
+    print(f"[OK] DFD Test Seti Filtreleme: manips={dfd_manips}")
+    assert "actors" in dfd_manips, "actors DFD test setinde yer almali!"
+    assert "DeepFakeDetection" in dfd_manips, "DeepFakeDetection test setinde yer almali!"
+    assert "youtube" not in dfd_manips, "youtube videolari DFD seti ile karistirilmamali!"
+    assert "Deepfakes" not in dfd_manips
+
+    # 5. On-the-fly SBI Uretimi ve RGB [0, 1] Araligi Testi
+    real_sample = [{"video_id": "000", "label": 0, "manipulation": "youtube", "compression": "c23", "rgb_np": np.full((224, 224, 3), 128, dtype=np.uint8)}]
+    sbi_ds = DeepfakeFaceDataset(samples=real_sample, is_train=True, sbi_prob=1.0)
+    sbi_item = sbi_ds[0]
+    print(f"[OK] SBI Ornegi: label={sbi_item['label']} | manip={sbi_item['manipulation']} | "
+          f"has_mask={sbi_item['has_mask']} | rgb_range=[{sbi_item['rgb'].min():.3f}, {sbi_item['rgb'].max():.3f}] | "
+          f"mask_shape={tuple(sbi_item['mask'].shape)}")
+    assert sbi_item["label"] == 1, "SBI sonrasi label=1 olmali!"
+    assert sbi_item["manipulation"] == "SBI", "SBI sonrasi manipulation='SBI' olmali!"
+    assert sbi_item["has_mask"] is True, "SBI ornegi has_mask=True olmali!"
+    assert sbi_item["mask"].shape == (1, 224, 224), f"Mask boyutu (1, 224, 224) olmali, alinan: {sbi_item['mask'].shape}"
+    assert sbi_item["rgb"].min() >= 0.0 and sbi_item["rgb"].max() <= 1.0, "RGB tensöru [0.0, 1.0] float32 araliginda kalmali!"
+
+    # 6. Guclendirilmis Veri Artirma (Augmentation) Testi
+    aug_rgb, aug_mask = sbi_ds._apply_augmentations(np.zeros((224, 224, 3), dtype=np.uint8), np.zeros((224, 224), dtype=np.uint8))
+    assert aug_rgb.shape == (224, 224, 3)
+    assert aug_mask.shape == (224, 224)
+    print("[OK] Guclendirilmis veri artirmalari basariyla calisti.")
 
     print("=== dataset.py Tüm Testleri Başarıyla Geçti! ===")

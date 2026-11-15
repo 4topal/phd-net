@@ -2,15 +2,14 @@
 
 Mimari Özeti:
 1. Dal 1 — Uzamsal-Faz Kolu (`Spatial-Phase Branch`):
-   - `Stem` (224x224 -> 112x112)
-   - `PhaseAttentionGate` (QPC haritası ile uzamsal-faz dikkat kapılaması)
-   - Hafif çok-ölçekli derinlemesine ayrılabilir evrişim omurgası (EdgeNeXt / RepVGG esinli bloklar:
-     112x112 -> 56x56 -> 28x28 -> 14x14)
+   - Pretrained EdgeNeXt-XS (`edgenext_xs` / `edgenext_x_small`) omurgası (timm)
+   - ImageNet normalizasyonu YALNIZCA spatial_backbone öncesinde uygulanır; QPC ve DCT [0, 1] RGB alır.
+   - `PhaseAttentionGate` (QPC haritası ile 56x56 aşamasında uzamsal-faz dikkat kapılaması)
+   - Downstream aşamalar (28x28 ve 14x14) faz modülasyonlu öznitelik haritalarını ardışık işler.
 2. Dal 2 — Sıkıştırma-İnvaryant Harmonik Kolu (`Harmonic Branch`):
    - `BlockDCT8x8` -> `HarmonicEnergyRatio` (HER) -> `LearnableFreqGate` (LFG: 28x28 ve 14x14)
 3. Dinamik Frekans-Uzamsal Kalibrasyon (`DFSC` Füzyon) & Hiyerarşik Köprü:
-   - 28x28 ve 14x14 ölçeklerinde çift-yönlü çapraz kapılama (cross-gating) ile uzamsal ve
-     harmonik özniteliklerin dinamik kalibrasyonu.
+   - 28x28 (64->160) ve 14x14 (100->352) ölçeklerinde çift-yönlü çapraz kapılama (cross-gating).
    - `bridge_28_to_14`: `fused_28` özniteliklerini `fused_14` üzerine bağlayan Stride-2 DWConv köprüsü.
 4. Çok Görevli Çıktı Başlıkları:
    - Başlık 1: Ortak Boyun (`shared_neck: 352 -> 256`) üzerinden ikili sınıflandırma logiti (`logits: (B, 1)`)
@@ -32,6 +31,7 @@ Kontrastif Kayıp Tanımı (`CrossManipulationContrastiveLoss` — `L_CCM`):
 from __future__ import annotations
 
 import json
+import logging
 import platform
 import time
 from datetime import datetime, timezone
@@ -44,6 +44,18 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 try:
+    import timm
+    from timm.models import register_model
+
+    # 'edgenext_xs' takma adını timm model havuzuna otomatik kaydet
+    if hasattr(timm, "list_models") and "edgenext_xs" not in timm.list_models("*edgenext*"):
+        def edgenext_xs(pretrained: bool = False, **kwargs: Any) -> Any:
+            return timm.create_model("edgenext_x_small", pretrained=pretrained, **kwargs)
+        register_model(edgenext_xs)
+except Exception:
+    import timm
+
+try:
     from frequency_extractor import ClassicalFrequencyExtractor
     from learnable_freq_gate import BlockDCT8x8, LearnableFreqGate
     from phase_congruency import PhaseAttentionGate, QuaternionPhaseCongruency
@@ -52,6 +64,7 @@ except ImportError:
     from src.learnable_freq_gate import BlockDCT8x8, LearnableFreqGate
     from src.phase_congruency import PhaseAttentionGate, QuaternionPhaseCongruency
 
+logger = logging.getLogger("phdnet")
 KOD_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_BENCHMARK_PATH = KOD_ROOT / "outputs" / "logs" / "benchmark.json"
 
@@ -160,7 +173,7 @@ class DynamicFreqSpatialCalibration(nn.Module):
 class LocalizationHead(nn.Module):
     """Çok ölçekli adli lokalizasyon ısı haritası çözücüsü (14x14 + 28x28 -> 224x224 maske logiti).
 
-    Kusur 5 Düzeltmesi: QPC Sınır Rehberliği (`phase_attn`) ile 112x112 aşamasında kenar kapılaması.
+    QPC Sınır Rehberliği (`phase_attn`) ile 112x112 aşamasında kenar kapılaması.
     """
 
     def __init__(self, in_dim_14: int, skip_dim_28: int, mid_dim: int = 96) -> None:
@@ -234,7 +247,7 @@ class PHDNet(nn.Module):
 
     Ablasyon Desteği (`ablation_mode`):
       - "full": Varsayılan tam PHD-Net modeli
-      - "no_qpc": QPC dikkat kapısını atlar (s_112_gated = s_112, phase_attn = None)
+      - "no_qpc": QPC dikkat kapısını atlar (s_56_gated = s_56, phase_attn = None)
       - "no_lfg": Frekans özelliklerini sıfır tensörlerle değiştirir (yalnızca uzamsal kol)
       - "no_dfsc": DFSC çapraz kapılamasını kaldırıp doğrudan toplama (s + freq_proj) uygular
       - "classical_freq": Klasik FFT + DCT istatistiklerini (ClassicalFrequencyExtractor) kullanır
@@ -245,14 +258,18 @@ class PHDNet(nn.Module):
 
     def __init__(
         self,
-        stem_dim: int = 48,
-        stage_dims: Tuple[int, int, int] = (88, 176, 272),
-        stage_depths: Tuple[int, int, int] = (2, 3, 4),
-        expand_ratio: float = 2.5,
         embed_dim: int = 128,
         low_max: int = 3,
         mid_max: int = 8,
         ablation_mode: str = "full",
+        use_pretrained_backbone: bool = True,
+        pretrained: Optional[bool] = None,
+        drop_path_rate: float = 0.1,
+        # Geriye dönük uyumluluk argümanları
+        stem_dim: Optional[int] = None,
+        stage_dims: Optional[Tuple[int, int, int]] = None,
+        stage_depths: Optional[Tuple[int, int, int]] = None,
+        expand_ratio: Optional[float] = None,
     ) -> None:
         super().__init__()
         valid_modes = {"full", "no_qpc", "no_lfg", "no_dfsc", "classical_freq", "no_ccm"}
@@ -261,25 +278,61 @@ class PHDNet(nn.Module):
         self.ablation_mode = ablation_mode
         self.preprocessor = PHDNetPreprocessor()
 
-        # 1. Dal: Uzamsal-Faz Kolu
-        self.stem = nn.Sequential(
-            nn.Conv2d(3, stem_dim, kernel_size=3, stride=2, padding=1, bias=False),
-            nn.BatchNorm2d(stem_dim),
-            nn.SiLU(inplace=True),
-            nn.Conv2d(stem_dim, stem_dim, kernel_size=3, stride=1, padding=1, bias=False),
-            nn.BatchNorm2d(stem_dim),
-            nn.SiLU(inplace=True),
+        if pretrained is not None:
+            use_pretrained_backbone = pretrained
+
+        # ImageNet Normalizasyon Sabitleri (YALNIZCA spatial_backbone girişi için)
+        self.register_buffer(
+            "imagenet_mean",
+            torch.tensor([0.485, 0.456, 0.406], dtype=torch.float32).view(1, 3, 1, 1),
+            persistent=False,
         )
+        self.register_buffer(
+            "imagenet_std",
+            torch.tensor([0.229, 0.224, 0.225], dtype=torch.float32).view(1, 3, 1, 1),
+            persistent=False,
+        )
+
+        # 1. Dal: Uzamsal-Faz Kolu (timm edgenext_xs omurgası)
+        model_name = "edgenext_xs"
+        if hasattr(timm, "is_model") and not timm.is_model(model_name) and timm.is_model("edgenext_x_small"):
+            model_name = "edgenext_x_small"
+
+        self.spatial_backbone = None
+        if use_pretrained_backbone:
+            try:
+                self.spatial_backbone = timm.create_model(
+                    model_name,
+                    pretrained=True,
+                    features_only=True,
+                    drop_path_rate=drop_path_rate,
+                )
+            except Exception as e:
+                logger.warning(
+                    "Önceden eğitilmiş %s ağırlıkları çevrimdışı veya yüklenemedi (%s). "
+                    "Rastgele ağırlıklarla (pretrained=False) devam ediliyor.",
+                    model_name, e
+                )
+                self.spatial_backbone = None
+
+        if self.spatial_backbone is None:
+            self.spatial_backbone = timm.create_model(
+                model_name,
+                pretrained=False,
+                features_only=True,
+                drop_path_rate=drop_path_rate,
+            )
+
+        feature_channels = self.spatial_backbone.feature_info.channels()
+        # EdgeNeXt-XS aşama kanal boyutları: [32, 64, 100, 192] (56x56, 28x28, 14x14, 7x7)
+        c_56 = feature_channels[0]   # 32
+        c_28 = feature_channels[1]   # 64
+        c_14 = feature_channels[2]   # 100
+
         if self.ablation_mode != "no_qpc":
-            self.phase_gate = PhaseAttentionGate(spatial_channels=stem_dim, qpc_channels=3, hidden_channels=32)
+            self.phase_gate = PhaseAttentionGate(spatial_channels=c_56, qpc_channels=3, hidden_channels=32)
         else:
             self.phase_gate = None
-
-        d1, d2, d3 = stage_dims
-        n1, n2, n3 = stage_depths
-        self.stage1_56 = DownsampleStage(stem_dim, d1, depth=n1, expand_ratio=expand_ratio)
-        self.stage2_28 = DownsampleStage(d1, d2, depth=n2, expand_ratio=expand_ratio)
-        self.stage3_14 = DownsampleStage(d2, d3, depth=n3, expand_ratio=expand_ratio)
 
         # 2. Dal: Sıkıştırma-İnvaryant Harmonik Kolu (DCT -> HER -> LFG) veya Klasik Frekans Ablasyonu
         if self.ablation_mode == "classical_freq":
@@ -310,10 +363,10 @@ class PHDNet(nn.Module):
 
         # Dinamik Frekans-Uzamsal Kalibrasyon (DFSC)
         use_cg = self.ablation_mode != "no_dfsc"
-        self.dfsc_28 = DynamicFreqSpatialCalibration(spatial_dim=d2, freq_dim=96, out_dim=160, use_cross_gating=use_cg)
-        self.dfsc_14 = DynamicFreqSpatialCalibration(spatial_dim=d3, freq_dim=160, out_dim=352, use_cross_gating=use_cg)
+        self.dfsc_28 = DynamicFreqSpatialCalibration(spatial_dim=c_28, freq_dim=96, out_dim=160, use_cross_gating=use_cg)
+        self.dfsc_14 = DynamicFreqSpatialCalibration(spatial_dim=c_14, freq_dim=160, out_dim=352, use_cross_gating=use_cg)
 
-        # Kusur 4: 28->14 Köprü Bağlantısı (Stride-2 DWConv 160 -> 160 + PWConv 160 -> 352)
+        # 28->14 Köprü Bağlantısı (Stride-2 DWConv 160 -> 160 + PWConv 160 -> 352)
         self.bridge_28_to_14 = nn.Sequential(
             nn.Conv2d(160, 160, kernel_size=3, stride=2, padding=1, groups=160, bias=False),
             nn.BatchNorm2d(160),
@@ -322,7 +375,7 @@ class PHDNet(nn.Module):
             nn.BatchNorm2d(352),
         )
 
-        # Kusur 7: Ortak Kontrastif Boyun (`shared_neck: 352 -> 256`) + Sınıflandırma + Kontrastif Gömme
+        # Ortak Kontrastif Boyun (`shared_neck: 352 -> 256`) + Sınıflandırma + Kontrastif Gömme
         self.global_pool = nn.AdaptiveAvgPool2d(1)
         self.shared_neck = nn.Sequential(
             nn.Linear(352, 256, bias=False),
@@ -353,24 +406,52 @@ class PHDNet(nn.Module):
         verilmediğinde `self.preprocessor` ile otomatik hesaplar.
         `compute_mask=False` seçildiğinde çıkarım hızlandırması için `localization_head` atlanır.
         """
-        # Ön işleme (gerekiyorsa)
+        # Ön işleme (gerekiyorsa ham [0, 1] RGB tensöründen hesaplanır)
         if self.ablation_mode != "no_qpc" and qpc_map is None:
             qpc_map = self.preprocessor.qpc(rgb)
 
         if self.ablation_mode not in ("no_lfg", "classical_freq") and dct_blocks is None:
             dct_blocks = self.preprocessor.block_dct(rgb)
 
-        # 1. Uzamsal-Faz Kolu
-        s_112 = self.stem(rgb)
-        if self.ablation_mode == "no_qpc" or self.phase_gate is None:
-            s_112_gated = s_112
-            phase_attn = None
-        else:
-            s_112_gated, phase_attn = self.phase_gate(s_112, qpc_map)
+        # 1. Uzamsal-Faz Kolu:
+        # YALNIZCA spatial_backbone girişi için ImageNet normalizasyonu uygulanır:
+        # QPC, BlockDCT8x8 ve ClassicalFrequencyExtractor [0, 1] ham RGB tensörünü almaya devam eder.
+        rgb_norm = (rgb - self.imagenet_mean) / self.imagenet_std
 
-        s_56 = self.stage1_56(s_112_gated)
-        s_28 = self.stage2_28(s_56)
-        s_14 = self.stage3_14(s_28)
+        # Önceden eğitilmiş edgenext_xs omurgasının aşamaları ardışık olarak koşturulur,
+        # böylece 56x56 çözünürlüğünde uygulanan PhaseAttentionGate downstream (28x28 ve 14x14)
+        # özniteliklerini de doğrudan modüle eder (atlama yapılmaz).
+        if hasattr(self.spatial_backbone, "stem_0") and hasattr(self.spatial_backbone, "stages_0"):
+            s_56 = self.spatial_backbone.stem_1(self.spatial_backbone.stem_0(rgb_norm))
+            s_56 = self.spatial_backbone.stages_0(s_56)
+
+            if self.ablation_mode == "no_qpc" or self.phase_gate is None:
+                s_56_gated = s_56
+                phase_attn = None
+            else:
+                qpc_56 = (
+                    F.adaptive_max_pool2d(qpc_map, (56, 56))
+                    if qpc_map.shape[-2:] != (56, 56)
+                    else qpc_map
+                )
+                s_56_gated, phase_attn = self.phase_gate(s_56, qpc_56)
+
+            s_28 = self.spatial_backbone.stages_1(s_56_gated)
+            s_14 = self.spatial_backbone.stages_2(s_28)
+        else:
+            # Genel FeatureListNet sarmalayıcı yedeği
+            feats = self.spatial_backbone(rgb_norm)
+            s_56, s_28, s_14 = feats[0], feats[1], feats[2]
+            if self.ablation_mode != "no_qpc" and self.phase_gate is not None:
+                qpc_56 = (
+                    F.adaptive_max_pool2d(qpc_map, (56, 56))
+                    if qpc_map.shape[-2:] != (56, 56)
+                    else qpc_map
+                )
+                s_56_gated, phase_attn = self.phase_gate(s_56, qpc_56)
+            else:
+                s_56_gated = s_56
+                phase_attn = None
 
         # 2. Harmonik Kol (veya Frekans Ablasyonu)
         b = rgb.shape[0]
@@ -434,18 +515,17 @@ class DiceLoss(nn.Module):
 class CrossManipulationContrastiveLoss(nn.Module):
     """Çapraz Manipülasyon Kontrastif Kaybı (`L_CCM`).
 
-    Kusur 7 Düzeltmesi:
-        L2-normalize gömmeler `z_i in S^{d-1}` ve ikili etiketler `y_i in {0: gerçek, 1: sahte}` için:
-        1) Gerçek yüz hiperküresel başlık terimi (`L_real`):
-           `L_real = mean_{i != j, y_i = y_j = 0} relu(real_margin - z_i^T z_j)^2`
-           Gerçek yüz temsillerini tek bir 0D noktaya çökertmeden hiperküresel başlık (`real_margin = 0.85`)
-           içinde tutar.
-        2) Gerçek-Sahte marjlı ayrıştırma terimi (`L_sep`):
-           Karesel menteşe (hinge) marjı + sıcaklık ölçekli Log-Sum-Exp hard-negative itme terimi:
-           `hinge_sep = mean_{i in I_real, k in I_fake} relu(z_i^T z_k - margin)^2`
-           `hard_neg = temperature * log1p(mean(exp((z_i^T z_k - margin) / temperature)))`
-           `L_sep = hinge_sep + 0.5 * hard_neg`
-        `L_CCM = L_real + L_sep`.
+    L2-normalize gömmeler `z_i in S^{d-1}` ve ikili etiketler `y_i in {0: gerçek, 1: sahte}` için:
+    1) Gerçek yüz hiperküresel başlık terimi (`L_real`):
+       `L_real = mean_{i != j, y_i = y_j = 0} relu(real_margin - z_i^T z_j)^2`
+       Gerçek yüz temsillerini tek bir 0D noktaya çökertmeden hiperküresel başlık (`real_margin = 0.85`)
+       içinde tutar.
+    2) Gerçek-Sahte marjlı ayrıştırma terimi (`L_sep`):
+       Karesel menteşe (hinge) marjı + sıcaklık ölçekli Log-Sum-Exp hard-negative itme terimi:
+       `hinge_sep = mean_{i in I_real, k in I_fake} relu(z_i^T z_k - margin)^2`
+       `hard_neg = temperature * log1p(mean(exp((z_i^T z_k - margin) / temperature)))`
+       `L_sep = hinge_sep + 0.5 * hard_neg`
+    `L_CCM = L_real + L_sep`.
     """
 
     def __init__(
@@ -491,6 +571,7 @@ class PHDNetMultiTaskLoss(nn.Module):
     hesaplanmaz ve çıktıda `dice_evaluated=False` olarak raporlanır.
     `has_mask` tensörü sağlandığında yalnızca `has_mask == True` olan örnekler için kısmi yerelleştirme
     kaybı (`0.5 * BCEWithLogits + 0.5 * Dice`) hesaplanır.
+    `label_smoothing`: İkili BCE kaybı için etiket yumuşatma (`y_smooth = y * (1 - eps) + 0.5 * eps`).
     """
 
     def __init__(
@@ -500,6 +581,7 @@ class PHDNetMultiTaskLoss(nn.Module):
         ccm_margin: float = 0.15,
         ccm_real_margin: float = 0.85,
         ccm_temp: float = 0.10,
+        label_smoothing: float = 0.05,
     ) -> None:
         super().__init__()
         self.bce = nn.BCEWithLogitsLoss()
@@ -509,6 +591,7 @@ class PHDNetMultiTaskLoss(nn.Module):
         )
         self.lambda_dice = lambda_dice
         self.lambda_ccm = lambda_ccm
+        self.label_smoothing = label_smoothing
 
     def forward(
         self,
@@ -518,7 +601,13 @@ class PHDNetMultiTaskLoss(nn.Module):
         has_mask: Optional[torch.Tensor] = None,
     ) -> Dict[str, Any]:
         y_float = labels.float().view(-1, 1)
-        l_bce = self.bce(outputs["logits"], y_float)
+        if self.label_smoothing > 0.0:
+            eps = self.label_smoothing
+            y_target = y_float * (1.0 - eps) + 0.5 * eps
+        else:
+            y_target = y_float
+
+        l_bce = self.bce(outputs["logits"], y_target)
         l_ccm = self.ccm(outputs["embedding"], labels.view(-1))
         total = l_bce + self.lambda_ccm * l_ccm
 
@@ -781,9 +870,9 @@ if __name__ == "__main__":
     dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Cihaz: {dev}")
 
-    # 1. Çok görevli kayıp ve geri yayılım doğrulaması (Flaw 4 test: mask_targets=None iken dfsc_28 gradyanı)
-    net_test = PHDNet().to(dev)
-    criterion = PHDNetMultiTaskLoss(lambda_dice=1.0, lambda_ccm=0.5)
+    # 1. Çok görevli kayıp ve geri yayılım doğrulaması (dfsc_28 gradyanı)
+    net_test = PHDNet(use_pretrained_backbone=False).to(dev)
+    criterion = PHDNetMultiTaskLoss(lambda_dice=1.0, lambda_ccm=0.5, label_smoothing=0.05)
     sample_rgb = torch.rand(4, 3, 224, 224, device=dev)
     sample_labels = torch.tensor([0, 0, 1, 1], device=dev)
 
@@ -796,9 +885,9 @@ if __name__ == "__main__":
     loss_dict = criterion(out_dict, sample_labels, mask_targets=None)
     loss_dict["total_loss"].backward()
 
-    assert net_test.dfsc_28.fuse[0].weight.grad is not None, "Flaw 4 Hatası: dfsc_28 gradyan almadı!"
+    assert net_test.dfsc_28.fuse[0].weight.grad is not None, "dfsc_28 gradyan almadı!"
     grad_norm_dfsc28 = float(net_test.dfsc_28.fuse[0].weight.grad.abs().sum().item())
-    assert grad_norm_dfsc28 > 0.0, "Flaw 4 Hatası: dfsc_28 gradyan normu 0!"
+    assert grad_norm_dfsc28 > 0.0, "dfsc_28 gradyan normu 0!"
     print(
         f"[OK] İleri/Geri yayılım: logits={tuple(out_dict['logits'].shape)}, "
         f"embedding={tuple(out_dict['embedding'].shape)}, mask_logits={tuple(out_dict['mask_logits'].shape)}"
@@ -807,7 +896,7 @@ if __name__ == "__main__":
         f"[OK] Kayıplar (maskesiz mod): BCE={loss_dict['bce_loss']:.4f}, "
         f"L_CCM={loss_dict['ccm_loss']:.4f}, Dice/Loc={loss_dict['dice_loss']} (dice_evaluated={loss_dict['dice_evaluated']})"
     )
-    print(f"[OK] Flaw 4 Doğrulandı: mask_targets=None iken dfsc_28 gradyan normu: {grad_norm_dfsc28:.6f} > 0")
+    print(f"[OK] dfsc_28 gradyan normu: {grad_norm_dfsc28:.6f} > 0")
 
     # 2. Kısmi Maske Denetimi Doğrulaması (has_mask=[True, False, True, False])
     net_test.zero_grad()
@@ -834,13 +923,15 @@ if __name__ == "__main__":
     assert loss_all_false["dice_loss"] is None, "has_mask tümü False iken dice_loss None olmalı!"
     print("[OK] Kısmi Maske Tümü False Doğrulandı (Dice devre dışı bırakıldı).")
 
-    # 3. Ablasyon Modları Doğrulaması
+    # 3. Ablasyon Modları Doğrulaması (6 mod: full, no_qpc, no_lfg, no_dfsc, classical_freq, no_ccm)
     print("\n--- Ablasyon Modları Doğrulaması ---")
-    ablation_modes = ["full", "no_qpc", "no_lfg", "no_dfsc", "classical_freq"]
+    ablation_modes = ["full", "no_qpc", "no_lfg", "no_dfsc", "classical_freq", "no_ccm"]
     for mode in ablation_modes:
-        abl_net = PHDNet(ablation_mode=mode).to(dev)
+        abl_net = PHDNet(ablation_mode=mode, use_pretrained_backbone=False).to(dev)
         abl_out = abl_net(sample_rgb[:2])
-        abl_loss = criterion(abl_out, sample_labels[:2])
+        actual_ccm = 0.0 if mode == "no_ccm" else 0.5
+        abl_crit = PHDNetMultiTaskLoss(lambda_dice=1.0, lambda_ccm=actual_ccm, label_smoothing=0.05)
+        abl_loss = abl_crit(abl_out, sample_labels[:2])
         abl_loss["total_loss"].backward()
         tot_p, _ = count_parameters(abl_net)
         print(f"[OK] Mod: '{mode:14s}' | Param={tot_p:,} | logits={tuple(abl_out['logits'].shape)} | Kayıp={abl_loss['total_loss'].item():.4f}")
@@ -850,39 +941,9 @@ if __name__ == "__main__":
     if dev.type == "cuda":
         torch.cuda.empty_cache()
 
-    # 4. GPU Benchmark (batch=1, warmup=50, runs=250)
-    print("\n--- GPU Benchmark Başlatılıyor ---")
-    report = run_phdnet_benchmark(warmup=50, runs=250, json_path=DEFAULT_BENCHMARK_PATH)
+    # 4. Benchmark Doğrulaması
+    print("\n--- Benchmark Örneği ---")
+    report = run_phdnet_benchmark(warmup=5, runs=200, json_path=DEFAULT_BENCHMARK_PATH)
     p = report["parameters"]
-    prep = report["preprocessing_separate"]
-    m_only = report["model_forward_only"]
-    e2e = report["end_to_end_with_preprocessing"]
-
-    print("\n--- PHD-Net Benchmark Özeti (Batch=1, 224x224, FP32) ---")
-    print(
-        f"Parametre Sayısı        : {p['total']:,} ({p['total_millions']:.3f}M) | "
-        f"Hedef: 3.800M | Fark: {p['diff_from_target']:+,} ({p['diff_percent']:+.2f}%)"
-    )
-    print(
-        f"Ön İşleme (QPC ayrı)    : medyan={prep['qpc_only']['latency_median_ms']:.3f} ms, "
-        f"p95={prep['qpc_only']['latency_p95_ms']:.3f} ms"
-    )
-    print(
-        f"Ön İşleme (8x8 DCT ayrı): medyan={prep['block_dct_8x8_only']['latency_median_ms']:.3f} ms, "
-        f"p95={prep['block_dct_8x8_only']['latency_p95_ms']:.3f} ms"
-    )
-    print(
-        f"Ön İşleme (QPC+DCT top.): medyan={prep['qpc_plus_dct_combined']['latency_median_ms']:.3f} ms, "
-        f"p95={prep['qpc_plus_dct_combined']['latency_p95_ms']:.3f} ms"
-    )
-    print(
-        f"Yalnızca Model İleri    : medyan={m_only['latency_median_ms']:.3f} ms, "
-        f"p95={m_only['latency_p95_ms']:.3f} ms | {m_only['fps_from_median']:.1f} FPS | "
-        f"Tepe VRAM={m_only['max_memory_allocated_mb']:.2f} MB"
-    )
-    print(
-        f"Uçtan Uca (Önİşl.+Model): medyan={e2e['latency_median_ms']:.3f} ms, "
-        f"p95={e2e['latency_p95_ms']:.3f} ms | {e2e['fps_from_median']:.1f} FPS | "
-        f"Tepe VRAM={e2e['max_memory_allocated_mb']:.2f} MB"
-    )
-    print(f"JSON kaydedildi         : {DEFAULT_BENCHMARK_PATH}")
+    print(f"Toplam Parametre Sayısı: {p['total']:,} ({p['total_millions']:.3f}M)")
+    print("[OK] phasefreq_net.py doğrulaması tamamlandı.")

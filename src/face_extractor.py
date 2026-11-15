@@ -18,6 +18,7 @@ import hashlib
 import json
 import logging
 import math
+import threading
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -548,8 +549,7 @@ class SCRFDFaceExtractor:
                 sess_opts.intra_op_num_threads = 1
                 sess_opts.inter_op_num_threads = 1
                 sess_opts.log_severity_level = 3
-                available_providers = ort.get_available_providers()
-                providers = [p for p in ["CUDAExecutionProvider", "CPUExecutionProvider"] if p in available_providers]
+                providers = ["CPUExecutionProvider"]
                 self._session = ort.InferenceSession(str(self.model_path), sess_options=sess_opts, providers=providers)
                 logger.info("SCRFD ONNXRuntime baslatildi. Saglayicilar: %s", self._session.get_providers())
             except Exception as exc:
@@ -898,12 +898,21 @@ def _process_single_video_frames(
     face_out_dir: Path,
     mask_out_dir: Optional[Path],
     num_frames: int = 8,
+    overwrite_existing: bool = False,
 ) -> List[Dict[str, Any]]:
     """Tek bir videodan belirtilen kare indekslerini okur, yuz + maske kirpar ve kaydeder."""
     expected_n = len(target_frame_indices) if target_frame_indices is not None else num_frames
     if face_out_dir.is_dir():
         existing_faces = sorted(face_out_dir.glob("frame_*.png"))
-        if len(existing_faces) >= max(1, expected_n // 2):
+        should_reuse = False
+        if not overwrite_existing:
+            if len(existing_faces) >= max(1, expected_n // 2):
+                should_reuse = True
+        else:
+            if len(existing_faces) >= expected_n:
+                should_reuse = True
+
+        if should_reuse:
             reused = []
             for fp in existing_faces:
                 try:
@@ -920,6 +929,19 @@ def _process_single_video_frames(
                     "score": 1.0,
                 })
             return reused
+        elif overwrite_existing and existing_faces:
+            # Beklenen sayidan azsa temiz re-extraction icin eski kareleri sil
+            for fp in existing_faces:
+                try:
+                    fp.unlink()
+                except OSError:
+                    pass
+            if mask_out_dir is not None and mask_out_dir.is_dir():
+                for mp in mask_out_dir.glob("frame_*.png"):
+                    try:
+                        mp.unlink()
+                    except OSError:
+                        pass
 
     cap = cv2.VideoCapture(str(video_path))
     if not cap.isOpened():
@@ -1037,6 +1059,7 @@ def run_dataset_extraction(
     only_test_list: bool = True,
     manifest_path: Optional[Path] = None,
     num_workers: int = 16,
+    overwrite_existing: bool = False,
 ) -> Dict[str, Any]:
     """FF++ ve Celeb-DF v2 veri setleri icin yapilandirilmis toplu yuz/maske cikarim fonksiyonu."""
     from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -1048,10 +1071,16 @@ def run_dataset_extraction(
     if manifest_path is None:
         manifest_path = output_dir / f"manifest_{dataset_mode}.json"
 
-    if detector_name.lower() == "scrfd":
-        extractor: Any = SCRFDFaceExtractor()
-    else:
-        extractor = YuNetFaceExtractor()
+    _tls = threading.local()
+
+    def _get_extractor() -> Any:
+        if not hasattr(_tls, "extractor"):
+            _tls.extractor = (
+                SCRFDFaceExtractor()
+                if detector_name.lower() == "scrfd"
+                else YuNetFaceExtractor()
+            )
+        return _tls.extractor
 
     manifest_entries: List[Dict[str, Any]] = []
     tasks: List[Dict[str, Any]] = []
@@ -1083,7 +1112,28 @@ def run_dataset_extraction(
                     "video_id": vid.stem,
                 })
 
-        # 2. Egitim Manipulasyonlari: Deepfakes, Face2Face, FaceSwap, NeuralTextures (8 kare/video)
+        # 1b. Gercek Videolar (original_sequences/actors): 32 kare/video
+        for comp in compressions:
+            actors_dir = ffpp_root / "original_sequences" / "actors" / comp / "videos"
+            if not actors_dir.is_dir():
+                actors_dir = ffpp_root / "original_sequences" / "actors" / comp
+            videos = collect_videos(actors_dir, max_videos=max_videos_per_category) if actors_dir.is_dir() else []
+            logger.info("  [original/actors/%s]: %d video siraya eklendi (32 kare/video)", comp, len(videos))
+            for vid in videos:
+                tasks.append({
+                    "video_path": vid,
+                    "mask_video_path": None,
+                    "num_frames": 32,
+                    "face_out_dir": output_dir / "faces" / "original_sequences" / "actors" / comp / vid.stem,
+                    "mask_out_dir": None,
+                    "label": 0,
+                    "manipulation": "actors",
+                    "compression": comp,
+                    "dataset": "ffpp",
+                    "video_id": vid.stem,
+                })
+
+        # 2. Egitim Manipulasyonlari: Deepfakes, Face2Face, FaceSwap, NeuralTextures (16 kare/video)
         train_manipulations = ["Deepfakes", "Face2Face", "FaceSwap", "NeuralTextures"]
         for manip in train_manipulations:
             for comp in compressions:
@@ -1091,7 +1141,7 @@ def run_dataset_extraction(
                 if not manip_dir.is_dir():
                     manip_dir = ffpp_root / "manipulated_sequences" / manip / comp
                 videos = collect_videos(manip_dir, max_videos=max_videos_per_category) if manip_dir.is_dir() else []
-                logger.info("  [%s/%s]: %d video siraya eklendi (8 kare/video)", manip, comp, len(videos))
+                logger.info("  [%s/%s]: %d video siraya eklendi (16 kare/video)", manip, comp, len(videos))
 
                 masks_root = ffpp_root / "manipulated_sequences" / manip / "masks" / "videos"
                 has_official_masks = masks_root.is_dir()
@@ -1103,7 +1153,7 @@ def run_dataset_extraction(
                     tasks.append({
                         "video_path": vid,
                         "mask_video_path": mask_vid_path,
-                        "num_frames": 8,
+                        "num_frames": 16,
                         "face_out_dir": output_dir / "faces" / "manipulated_sequences" / manip / comp / vid.stem,
                         "mask_out_dir": (
                             output_dir / "masks" / "manipulated_sequences" / manip / comp / vid.stem
@@ -1194,6 +1244,7 @@ def run_dataset_extraction(
             })
 
     def _worker(t_info: Dict[str, Any]) -> List[Dict[str, Any]]:
+        extractor = _get_extractor()
         items = _process_single_video_frames(
             extractor=extractor,
             video_path=t_info["video_path"],
@@ -1202,6 +1253,7 @@ def run_dataset_extraction(
             face_out_dir=t_info["face_out_dir"],
             mask_out_dir=t_info["mask_out_dir"],
             num_frames=t_info["num_frames"],
+            overwrite_existing=t_info.get("overwrite_existing", overwrite_existing),
         )
         entries = []
         for item in items:
@@ -1283,6 +1335,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--only_test_list", action="store_true", default=True, help="Celeb-DF icin sadece test listesindekileri cikar.")
     parser.add_argument("--compressions", nargs="+", default=["c23", "c40"], help="FF++ sikistirma seviyeleri.")
     parser.add_argument("--num_workers", type=int, default=16, help="Paralel video cikarim is parcacigi sayisi.")
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        default=False,
+        help="Mevcut kareleri beklenen sayidan az ise yeniden cikar.",
+    )
     return parser
 
 
@@ -1301,6 +1359,7 @@ if __name__ == "__main__":
             compressions=args.compressions,
             only_test_list=args.only_test_list,
             num_workers=args.num_workers,
+            overwrite_existing=args.overwrite,
         )
     elif args.data_dir is not None:
         run_extraction(

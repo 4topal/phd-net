@@ -1,0 +1,167 @@
+{
+  "timestamp": "2026-11-13 10:04:44",
+  "model": "phdnet",
+  "ablation": "full",
+  "smoke_test": true,
+  "device": "cuda",
+  "checkpoint_info": {},
+  "protocol_1_within_dataset_ffpp": {
+    "samples_evaluated": 96,
+    "combined_c23_c40": {
+      "frame_metrics": {
+        "auc": 0.2131,
+        "eer": 0.7396,
+        "ap": 0.4142,
+        "f1": 0.0,
+        "accuracy": 0.5,
+        "optimal_threshold": 0.4881,
+        "opt_f1": 0.1176,
+        "opt_accuracy": 0.5312
+      },
+      "video_metrics": {
+        "auc": 0.0156,
+        "eer": 0.875,
+        "ap": 0.3389,
+        "f1": 0.0,
+        "accuracy": 0.5,
+        "optimal_threshold": 0.95,
+        "opt_f1": 0.0,
+        "opt_accuracy": 0.5
+      },
+      "pixel_localization": {
+        "dice": 0.1509,
+        "iou": 0.0816
+      }
+    },
+    "compression_c23": {
+      "frame_metrics": {
+        "auc": 0.5,
+        "eer": 0.5,
+        "ap": 0.5,
+        "f1": 0.0,
+        "accuracy": 1.0,
+        "optimal_threshold": 0.5,
+        "opt_f1": 0.0,
+        "opt_accuracy": 1.0
+      },
+      "video_metrics": {
+        "auc": 0.5,
+        "eer": 0.5,
+        "ap": 0.5,
+        "f1": 0.0,
+        "accuracy": 1.0,
+        "optimal_threshold": 0.5,
+        "opt_f1": 0.0,
+        "opt_accuracy": 1.0
+      }
+    },
+    "compression_c40": {
+      "frame_metrics": {
+        "auc": 0.5,
+        "eer": 0.5,
+        "ap": 0.5,
+        "f1": 0.0,
+        "accuracy": 0.0,
+        "optimal_threshold": 0.5,
+        "opt_f1": 0.0,
+        "opt_accuracy": 0.0
+      },
+      "video_metrics": {
+        "auc": 0.5,
+        "eer": 0.5,
+        "ap": 0.5,
+        "f1": 0.0,
+        "accuracy": 0.0,
+        "optimal_threshold": 0.5,
+        "opt_f1": 0.0,
+        "opt_accuracy": 0.0
+      }
+    }
+  },
+  "protocol_2_cross_manipulation": {
+    "FaceShifter": {
+      "samples": 48,
+      "frame_metrics": {
+        "auc": 0.2517,
+        "eer": 0.6667,
+        "ap": 0.3843,
+        "f1": 0.0,
+        "accuracy": 0.5,
+        "optimal_threshold": 0.95,
+        "opt_f1": 0.0,
+        "opt_accuracy": 0.5
+      },
+      "video_metrics": {
+        "auc": 0.0625,
+        "eer": 0.9375,
+        "ap": 0.3488,
+        "f1": 0.0,
+        "accuracy": 0.5,
+        "optimal_threshold": 0.95,
+        "opt_f1": 0.0,
+        "opt_accuracy": 0.5
+      }
+    },
+    "DeepFakeDetection": {
+      "samples": 48,
+      "frame_metrics": {
+        "auc": 0.2517,
+        "eer": 0.6667,
+        "ap": 0.3843,
+        "f1": 0.0,
+        "accuracy": 0.5,
+        "optimal_threshold": 0.95,
+        "opt_f1": 0.0,
+        "opt_accuracy": 0.5
+      },
+      "video_metrics": {
+        "auc": 0.0625,
+        "eer": 0.9375,
+        "ap": 0.3488,
+        "f1": 0.0,
+        "accuracy": 0.5,
+        "optimal_threshold": 0.95,
+        "opt_f1": 0.0,
+        "opt_accuracy": 0.5
+      }
+    }
+  },
+  "protocol_3_cross_dataset_celebdf": {
+    "videos_in_test_list": 64,
+    "samples_evaluated": 64,
+    "frame_metrics": {
+      "auc": 0.2158,
+      "eer": 0.75,
+      "ap": 0.378,
+      "f1": 0.0,
+      "accuracy": 0.5,
+      "optimal_threshold": 0.95,
+      "opt_f1": 0.0,
+      "opt_accuracy": 0.5
+    },
+    "video_metrics": {
+      "auc": 0.0,
+      "eer": 1.0,
+      "ap": 0.3371,
+      "f1": 0.0,
+      "accuracy": 0.5,
+      "optimal_threshold": 0.95,
+      "opt_f1": 0.0,
+      "opt_accuracy": 0.5
+    }
+  },
+  "inference_speed_benchmark": {
+    "fast_detection_no_mask": {
+      "median_ms": 28.43,
+      "mean_ms": 29.27,
+      "p95_ms": 49.13,
+      "fps": 35.2
+    },
+    "forensic_localization_with_mask": {
+      "median_ms": 26.75,
+      "mean_ms": 28.59,
+      "p95_ms": 51.52,
+      "fps": 37.4
+    }
+  }
+}

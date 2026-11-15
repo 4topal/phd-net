@@ -1,0 +1,427 @@
+{
+  "model": "phdnet",
+  "ablation": "no_qpc",
+  "best_video_auc": 0.9811,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.4234,
+      "train_bce": 0.5903,
+      "train_ccm": 0.4235,
+      "train_dice": 0.6214,
+      "val_loss": 0.8772,
+      "frame_metrics": {
+        "auc": 0.8212,
+        "eer": 0.2606,
+        "ap": 0.9023,
+        "f1": 0.7861,
+        "accuracy": 0.7364,
+        "optimal_threshold": 0.5492,
+        "opt_f1": 0.7624,
+        "opt_accuracy": 0.7198
+      },
+      "video_metrics": {
+        "auc": 0.9111,
+        "eer": 0.157,
+        "ap": 0.8904,
+        "f1": 0.8441,
+        "accuracy": 0.8394,
+        "optimal_threshold": 0.5369,
+        "opt_f1": 0.8513,
+        "opt_accuracy": 0.8556
+      },
+      "lr": 0.00015005480453050786,
+      "duration_sec": 890.44
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.0746,
+      "train_bce": 0.4603,
+      "train_ccm": 0.3454,
+      "train_dice": 0.4416,
+      "val_loss": 0.7238,
+      "frame_metrics": {
+        "auc": 0.8869,
+        "eer": 0.1987,
+        "ap": 0.9402,
+        "f1": 0.8662,
+        "accuracy": 0.8149,
+        "optimal_threshold": 0.8007,
+        "opt_f1": 0.8323,
+        "opt_accuracy": 0.7928
+      },
+      "video_metrics": {
+        "auc": 0.9402,
+        "eer": 0.13,
+        "ap": 0.9286,
+        "f1": 0.8562,
+        "accuracy": 0.8339,
+        "optimal_threshold": 0.6601,
+        "opt_f1": 0.8908,
+        "opt_accuracy": 0.8863
+      },
+      "lr": 0.0003,
+      "duration_sec": 709.37
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.9436,
+      "train_bce": 0.3979,
+      "train_ccm": 0.313,
+      "train_dice": 0.3892,
+      "val_loss": 0.6685,
+      "frame_metrics": {
+        "auc": 0.9118,
+        "eer": 0.1722,
+        "ap": 0.9546,
+        "f1": 0.8789,
+        "accuracy": 0.8283,
+        "optimal_threshold": 0.7866,
+        "opt_f1": 0.856,
+        "opt_accuracy": 0.8203
+      },
+      "video_metrics": {
+        "auc": 0.9612,
+        "eer": 0.0939,
+        "ap": 0.9544,
+        "f1": 0.8394,
+        "accuracy": 0.8087,
+        "optimal_threshold": 0.6772,
+        "opt_f1": 0.9147,
+        "opt_accuracy": 0.9097
+      },
+      "lr": 0.0002977211629518312,
+      "duration_sec": 709.66
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.8531,
+      "train_bce": 0.3576,
+      "train_ccm": 0.287,
+      "train_dice": 0.352,
+      "val_loss": 0.5603,
+      "frame_metrics": {
+        "auc": 0.9216,
+        "eer": 0.1601,
+        "ap": 0.9596,
+        "f1": 0.8786,
+        "accuracy": 0.8427,
+        "optimal_threshold": 0.622,
+        "opt_f1": 0.8677,
+        "opt_accuracy": 0.8339
+      },
+      "video_metrics": {
+        "auc": 0.9705,
+        "eer": 0.0578,
+        "ap": 0.9541,
+        "f1": 0.9252,
+        "accuracy": 0.9206,
+        "optimal_threshold": 0.5873,
+        "opt_f1": 0.9447,
+        "opt_accuracy": 0.944
+      },
+      "lr": 0.0002909538931178862,
+      "duration_sec": 720.65
+    },
+    {
+      "epoch": 5,
+      "train_loss": 0.7266,
+      "train_bce": 0.3353,
+      "train_ccm": 0.2711,
+      "train_dice": 0.2557,
+      "val_loss": 0.5847,
+      "frame_metrics": {
+        "auc": 0.9175,
+        "eer": 0.1613,
+        "ap": 0.9559,
+        "f1": 0.8864,
+        "accuracy": 0.843,
+        "optimal_threshold": 0.851,
+        "opt_f1": 0.8662,
+        "opt_accuracy": 0.832
+      },
+      "video_metrics": {
+        "auc": 0.958,
+        "eer": 0.0975,
+        "ap": 0.9472,
+        "f1": 0.8768,
+        "accuracy": 0.861,
+        "optimal_threshold": 0.6825,
+        "opt_f1": 0.9142,
+        "opt_accuracy": 0.9116
+      },
+      "lr": 0.0002799038105676658,
+      "duration_sec": 740.51
+    },
+    {
+      "epoch": 6,
+      "train_loss": 0.6632,
+      "train_bce": 0.3165,
+      "train_ccm": 0.257,
+      "train_dice": 0.2182,
+      "val_loss": 0.5301,
+      "frame_metrics": {
+        "auc": 0.9276,
+        "eer": 0.1489,
+        "ap": 0.9616,
+        "f1": 0.8853,
+        "accuracy": 0.8522,
+        "optimal_threshold": 0.5884,
+        "opt_f1": 0.8788,
+        "opt_accuracy": 0.8473
+      },
+      "video_metrics": {
+        "auc": 0.9765,
+        "eer": 0.0614,
+        "ap": 0.9596,
+        "f1": 0.9396,
+        "accuracy": 0.9368,
+        "optimal_threshold": 0.5936,
+        "opt_f1": 0.9403,
+        "opt_accuracy": 0.9404
+      },
+      "lr": 0.00026490666646784665,
+      "duration_sec": 738.37
+    },
+    {
+      "epoch": 7,
+      "train_loss": 0.6278,
+      "train_bce": 0.3019,
+      "train_ccm": 0.2451,
+      "train_dice": 0.2033,
+      "val_loss": 0.5269,
+      "frame_metrics": {
+        "auc": 0.932,
+        "eer": 0.1453,
+        "ap": 0.9637,
+        "f1": 0.8987,
+        "accuracy": 0.8623,
+        "optimal_threshold": 0.7905,
+        "opt_f1": 0.8843,
+        "opt_accuracy": 0.8527
+      },
+      "video_metrics": {
+        "auc": 0.9687,
+        "eer": 0.0848,
+        "ap": 0.9593,
+        "f1": 0.9049,
+        "accuracy": 0.8953,
+        "optimal_threshold": 0.6736,
+        "opt_f1": 0.9242,
+        "opt_accuracy": 0.9224
+      },
+      "lr": 0.0002464181414529809,
+      "duration_sec": 746.59
+    },
+    {
+      "epoch": 8,
+      "train_loss": 0.5908,
+      "train_bce": 0.2871,
+      "train_ccm": 0.233,
+      "train_dice": 0.1872,
+      "val_loss": 0.562,
+      "frame_metrics": {
+        "auc": 0.9307,
+        "eer": 0.146,
+        "ap": 0.9649,
+        "f1": 0.8752,
+        "accuracy": 0.8437,
+        "optimal_threshold": 0.462,
+        "opt_f1": 0.879,
+        "opt_accuracy": 0.8475
+      },
+      "video_metrics": {
+        "auc": 0.9775,
+        "eer": 0.0614,
+        "ap": 0.9631,
+        "f1": 0.9395,
+        "accuracy": 0.9386,
+        "optimal_threshold": 0.5322,
+        "opt_f1": 0.9388,
+        "opt_accuracy": 0.9386
+      },
+      "lr": 0.000225,
+      "duration_sec": 747.88
+    },
+    {
+      "epoch": 9,
+      "train_loss": 0.563,
+      "train_bce": 0.2751,
+      "train_ccm": 0.2221,
+      "train_dice": 0.1769,
+      "val_loss": 0.5105,
+      "frame_metrics": {
+        "auc": 0.9369,
+        "eer": 0.1379,
+        "ap": 0.9679,
+        "f1": 0.8976,
+        "accuracy": 0.8656,
+        "optimal_threshold": 0.7311,
+        "opt_f1": 0.8823,
+        "opt_accuracy": 0.8528
+      },
+      "video_metrics": {
+        "auc": 0.978,
+        "eer": 0.0668,
+        "ap": 0.9687,
+        "f1": 0.9294,
+        "accuracy": 0.926,
+        "optimal_threshold": 0.5984,
+        "opt_f1": 0.9466,
+        "opt_accuracy": 0.9458
+      },
+      "lr": 0.00020130302149885031,
+      "duration_sec": 751.86
+    },
+    {
+      "epoch": 10,
+      "train_loss": 0.5363,
+      "train_bce": 0.2638,
+      "train_ccm": 0.2113,
+      "train_dice": 0.1669,
+      "val_loss": 0.5248,
+      "frame_metrics": {
+        "auc": 0.9387,
+        "eer": 0.1394,
+        "ap": 0.9694,
+        "f1": 0.8891,
+        "accuracy": 0.8585,
+        "optimal_threshold": 0.5073,
+        "opt_f1": 0.889,
+        "opt_accuracy": 0.8586
+      },
+      "video_metrics": {
+        "auc": 0.9811,
+        "eer": 0.0614,
+        "ap": 0.9745,
+        "f1": 0.942,
+        "accuracy": 0.9404,
+        "optimal_threshold": 0.5727,
+        "opt_f1": 0.9422,
+        "opt_accuracy": 0.9422
+      },
+      "lr": 0.00017604722665003956,
+      "duration_sec": 766.72
+    },
+    {
+      "epoch": 11,
+      "train_loss": 0.5133,
+      "train_bce": 0.2545,
+      "train_ccm": 0.2021,
+      "train_dice": 0.1577,
+      "val_loss": 0.5186,
+      "frame_metrics": {
+        "auc": 0.9357,
+        "eer": 0.137,
+        "ap": 0.9641,
+        "f1": 0.9027,
+        "accuracy": 0.8704,
+        "optimal_threshold": 0.7931,
+        "opt_f1": 0.8902,
+        "opt_accuracy": 0.8604
+      },
+      "video_metrics": {
+        "auc": 0.9729,
+        "eer": 0.065,
+        "ap": 0.9636,
+        "f1": 0.922,
+        "accuracy": 0.917,
+        "optimal_threshold": 0.6671,
+        "opt_f1": 0.9393,
+        "opt_accuracy": 0.9386
+      },
+      "lr": 0.00015,
+      "duration_sec": 735.4
+    },
+    {
+      "epoch": 12,
+      "train_loss": 0.4922,
+      "train_bce": 0.246,
+      "train_ccm": 0.1935,
+      "train_dice": 0.1495,
+      "val_loss": 0.4856,
+      "frame_metrics": {
+        "auc": 0.9427,
+        "eer": 0.1309,
+        "ap": 0.9707,
+        "f1": 0.9056,
+        "accuracy": 0.8741,
+        "optimal_threshold": 0.7491,
+        "opt_f1": 0.8959,
+        "opt_accuracy": 0.867
+      },
+      "video_metrics": {
+        "auc": 0.9796,
+        "eer": 0.0704,
+        "ap": 0.9749,
+        "f1": 0.9241,
+        "accuracy": 0.9188,
+        "optimal_threshold": 0.6247,
+        "opt_f1": 0.9449,
+        "opt_accuracy": 0.944
+      },
+      "lr": 0.00012395277334996044,
+      "duration_sec": 719.42
+    },
+    {
+      "epoch": 13,
+      "train_loss": 0.4767,
+      "train_bce": 0.239,
+      "train_ccm": 0.186,
+      "train_dice": 0.1447,
+      "val_loss": 0.5117,
+      "frame_metrics": {
+        "auc": 0.9397,
+        "eer": 0.1337,
+        "ap": 0.969,
+        "f1": 0.9009,
+        "accuracy": 0.8693,
+        "optimal_threshold": 0.7827,
+        "opt_f1": 0.8881,
+        "opt_accuracy": 0.8591
+      },
+      "video_metrics": {
+        "auc": 0.9791,
+        "eer": 0.065,
+        "ap": 0.9727,
+        "f1": 0.9368,
+        "accuracy": 0.9332,
+        "optimal_threshold": 0.662,
+        "opt_f1": 0.9384,
+        "opt_accuracy": 0.9386
+      },
+      "lr": 9.869697850114969e-05,
+      "duration_sec": 723.75
+    },
+    {
+      "epoch": 14,
+      "train_loss": 0.4612,
+      "train_bce": 0.2326,
+      "train_ccm": 0.1794,
+      "train_dice": 0.1389,
+      "val_loss": 0.5028,
+      "frame_metrics": {
+        "auc": 0.9407,
+        "eer": 0.1331,
+        "ap": 0.9693,
+        "f1": 0.9007,
+        "accuracy": 0.8701,
+        "optimal_threshold": 0.691,
+        "opt_f1": 0.8921,
+        "opt_accuracy": 0.8627
+      },
+      "video_metrics": {
+        "auc": 0.9792,
+        "eer": 0.0704,
+        "ap": 0.9735,
+        "f1": 0.9393,
+        "accuracy": 0.9368,
+        "optimal_threshold": 0.5337,
+        "opt_f1": 0.9422,
+        "opt_accuracy": 0.9404
+      },
+      "lr": 7.500000000000002e-05,
+      "duration_sec": 741.18
+    }
+  ]
+}

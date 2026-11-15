@@ -27,6 +27,7 @@ import json
 import logging
 import math
 import os
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 import random
 import sys
 import time
@@ -40,6 +41,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
 
 # sklearn / metrik yardımcıları
+from sklearn.metrics import roc_curve, roc_auc_score
 from train import (
     aggregate_video_metrics,
     compute_classification_metrics,
@@ -105,11 +107,12 @@ def compute_pixel_metrics(
 def run_dataset_inference(
     model: nn.Module,
     dataset: Dataset,
-    batch_size: int = 32,
-    num_workers: int = 0,
+    batch_size: int = 64,
+    num_workers: int = 4,
     device: torch.device = torch.device("cpu"),
     is_phdnet: bool = True,
     collect_masks: bool = False,
+    prefetch_factor: Optional[int] = 2,
 ) -> Dict[str, Any]:
     """Verilen veri seti üzerinde model tahminlerini toplar."""
     loader = DataLoader(
@@ -118,6 +121,8 @@ def run_dataset_inference(
         shuffle=False,
         num_workers=num_workers,
         pin_memory=(device.type == "cuda"),
+        persistent_workers=(num_workers > 0),
+        prefetch_factor=(prefetch_factor if num_workers > 0 else None),
     )
 
     all_probs: List[float] = []
@@ -186,8 +191,8 @@ def benchmark_inference_latency(
     is_phdnet: bool,
     device: torch.device,
     image_size: int = 224,
-    warmup: int = 15,
-    runs: int = 50,
+    warmup: int = 50,
+    runs: int = 200,
 ) -> Dict[str, Any]:
     """compute_mask=False ve compute_mask=True için çıkarım gecikmelerini ölçer."""
     dummy_input = torch.rand(1, 3, image_size, image_size, device=device)
@@ -197,23 +202,37 @@ def benchmark_inference_latency(
         with torch.no_grad():
             for _ in range(warmup):
                 forward_fn()
+
             if device.type == "cuda":
                 torch.cuda.synchronize(device)
+                start_events = [torch.cuda.Event(enable_timing=True) for _ in range(runs)]
+                end_events = [torch.cuda.Event(enable_timing=True) for _ in range(runs)]
 
-            latencies = []
-            for _ in range(runs):
-                t0 = time.perf_counter()
-                forward_fn()
-                if device.type == "cuda":
-                    torch.cuda.synchronize(device)
-                latencies.append((time.perf_counter() - t0) * 1000.0)
+                for i in range(runs):
+                    start_events[i].record()
+                    forward_fn()
+                    end_events[i].record()
 
-        lat_arr = np.array(latencies)
-        median_ms = float(np.median(lat_arr))
-        p95_ms = float(np.percentile(lat_arr, 95))
+                torch.cuda.synchronize(device)
+                times_ms = np.array(
+                    [s.elapsed_time(e) for s, e in zip(start_events, end_events)],
+                    dtype=np.float64,
+                )
+            else:
+                latencies = []
+                for _ in range(runs):
+                    t0 = time.perf_counter()
+                    forward_fn()
+                    latencies.append((time.perf_counter() - t0) * 1000.0)
+                times_ms = np.array(latencies, dtype=np.float64)
+
+        median_ms = float(np.median(times_ms))
+        mean_ms = float(np.mean(times_ms))
+        p95_ms = float(np.percentile(times_ms, 95))
         fps = round(1000.0 / median_ms, 1) if median_ms > 0 else 0.0
         return {
             "median_ms": round(median_ms, 2),
+            "mean_ms": round(mean_ms, 2),
             "p95_ms": round(p95_ms, 2),
             "fps": fps,
         }
@@ -229,6 +248,51 @@ def benchmark_inference_latency(
 
 
 # ==============================================================================
+# Ampirik Video-Level ROC Verisi Hesaplayıcı
+# ==============================================================================
+
+def compute_video_roc(
+    video_ids: Sequence[str],
+    y_true: Sequence[int],
+    y_probs: Sequence[float],
+) -> Dict[str, Any]:
+    """Video bazında ortalanmış tahminler üzerinden ampirik ROC eğrisi (fpr, tpr, thresholds, auc, eer) hesaplar."""
+    v_probs_dict: Dict[str, List[float]] = defaultdict(list)
+    v_labels_dict: Dict[str, int] = {}
+
+    for vid, label, prob in zip(video_ids, y_true, y_probs):
+        v_probs_dict[vid].append(float(prob))
+        v_labels_dict[vid] = int(label)
+
+    v_ids = sorted(v_probs_dict.keys())
+    v_mean_probs = np.array([float(np.mean(v_probs_dict[v])) for v in v_ids], dtype=float)
+    v_true_labels = np.array([v_labels_dict[v] for v in v_ids], dtype=int)
+
+    unique_classes = np.unique(v_true_labels)
+    if len(unique_classes) >= 2:
+        fpr, tpr, thresholds = roc_curve(v_true_labels, v_mean_probs, pos_label=1)
+        try:
+            auc = float(roc_auc_score(v_true_labels, v_mean_probs))
+        except Exception:
+            auc = 0.5
+        eer = compute_eer(v_true_labels, v_mean_probs)
+    else:
+        fpr = np.array([0.0, 1.0], dtype=np.float64)
+        tpr = np.array([0.0, 1.0], dtype=np.float64)
+        thresholds = np.array([1.0, 0.0], dtype=np.float64)
+        auc = 0.5
+        eer = 0.5
+
+    return {
+        "fpr": np.asarray(fpr, dtype=np.float64),
+        "tpr": np.asarray(tpr, dtype=np.float64),
+        "thresholds": np.asarray(thresholds, dtype=np.float64),
+        "auc": float(auc),
+        "eer": float(eer),
+    }
+
+
+# ==============================================================================
 # Protokol 1: Within-Dataset (FF++ Test Seti) Değerlendirmesi
 # ==============================================================================
 
@@ -237,16 +301,22 @@ def evaluate_protocol1_ffpp(
     args: argparse.Namespace,
     device: torch.device,
     is_phdnet: bool,
-) -> Dict[str, Any]:
+) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """Protokol 1: FF++ Test spliti üzerinde c23, c40 ve birleşik değerlendirme."""
     logger.info(">>> PROTOKOL 1: Within-Dataset (FF++ Test Ayrımı) Değerlendiriliyor...")
 
     if args.smoke_test:
         test_ds = SyntheticSmokeDataset(num_samples=96, target_size=224, seed=101)
     else:
+        manifest_p = args.manifest_path
+        if manifest_p is None:
+            default_manifest = PROJECT_ROOT / "data" / "processed_faces" / "manifest_ffpp.json"
+            if default_manifest.is_file():
+                manifest_p = str(default_manifest)
+
         test_ds = DeepfakeFaceDataset(
             data_root=args.data_root,
-            manifest_path=args.manifest_path,
+            manifest_path=manifest_p,
             split="test",
             compressions=["c23", "c40"],
             manipulations=["Deepfakes", "Face2Face", "FaceSwap", "NeuralTextures"],
@@ -262,6 +332,7 @@ def evaluate_protocol1_ffpp(
         device=device,
         is_phdnet=is_phdnet,
         collect_masks=is_phdnet,
+        prefetch_factor=getattr(args, "prefetch_factor", 2),
     )
 
     probs = inf["probs"]
@@ -271,34 +342,35 @@ def evaluate_protocol1_ffpp(
     manips = np.array(inf["manipulations"])
 
     # 1. Genel Birleşik (c23 + c40)
+    # c23 ve c40 kopyalarının ayrı skorlanması için f"{v}_{c}" kullan
+    vids_comb = [f"{v}_{c}" for v, c in zip(vids, comps)]
     comb_frame = compute_classification_metrics(labels, probs)
-    comb_video = aggregate_video_metrics(vids, labels, probs)
+    comb_video = aggregate_video_metrics(vids_comb, labels, probs)
+    comb_video_roc = compute_video_roc(vids_comb, labels, probs)
 
-    # 2. c23 Ayrımı
-    idx_c23 = (comps == "c23") | (labels == 0)
+    # 2. c23 Ayrımı (Sadece c23 kareleri; c40 gerçek kareler dahil EDİLMEZ!)
+    idx_c23 = (comps == "c23")
     if np.sum(idx_c23) > 0:
+        c23_vids = [vids[i] for i, b in enumerate(idx_c23) if b]
         c23_frame = compute_classification_metrics(labels[idx_c23], probs[idx_c23])
-        c23_video = aggregate_video_metrics(
-            [vids[i] for i, b in enumerate(idx_c23) if b],
-            labels[idx_c23],
-            probs[idx_c23],
-        )
+        c23_video = aggregate_video_metrics(c23_vids, labels[idx_c23], probs[idx_c23])
+        c23_video_roc = compute_video_roc(c23_vids, labels[idx_c23], probs[idx_c23])
     else:
         c23_frame, c23_video = comb_frame, comb_video
+        c23_video_roc = comb_video_roc
 
-    # 3. c40 Ayrımı
-    idx_c40 = (comps == "c40") | (labels == 0)
+    # 3. c40 Ayrımı (Sadece c40 kareleri; c23 gerçek kareler dahil EDİLMEZ!)
+    idx_c40 = (comps == "c40")
     if np.sum(idx_c40) > 0:
+        c40_vids = [vids[i] for i, b in enumerate(idx_c40) if b]
         c40_frame = compute_classification_metrics(labels[idx_c40], probs[idx_c40])
-        c40_video = aggregate_video_metrics(
-            [vids[i] for i, b in enumerate(idx_c40) if b],
-            labels[idx_c40],
-            probs[idx_c40],
-        )
+        c40_video = aggregate_video_metrics(c40_vids, labels[idx_c40], probs[idx_c40])
+        c40_video_roc = compute_video_roc(c40_vids, labels[idx_c40], probs[idx_c40])
     else:
         c40_frame, c40_video = comb_frame, comb_video
+        c40_video_roc = comb_video_roc
 
-    return {
+    metrics = {
         "samples_evaluated": len(labels),
         "combined_c23_c40": {
             "frame_metrics": comb_frame,
@@ -314,6 +386,12 @@ def evaluate_protocol1_ffpp(
             "video_metrics": c40_video,
         },
     }
+    roc_data = {
+        "combined": comb_video_roc,
+        "c23": c23_video_roc,
+        "c40": c40_video_roc,
+    }
+    return metrics, roc_data
 
 
 # ==============================================================================
@@ -325,19 +403,26 @@ def evaluate_protocol2_cross_manipulation(
     args: argparse.Namespace,
     device: torch.device,
     is_phdnet: bool,
-) -> Dict[str, Any]:
+) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """Protokol 2: FaceShifter ve DeepFakeDetection üzerinde sıfır-atış değerlendirme."""
     logger.info(">>> PROTOKOL 2: Cross-Manipulation (FaceShifter & DFD) Değerlendiriliyor...")
 
     results: Dict[str, Any] = {}
+    roc_dict: Dict[str, Any] = {}
 
     for unseen_manip in ["FaceShifter", "DeepFakeDetection"]:
         if args.smoke_test:
             ds = SyntheticSmokeDataset(num_samples=48, target_size=224, seed=202)
         else:
+            manifest_p = args.manifest_path
+            if manifest_p is None:
+                default_manifest = PROJECT_ROOT / "data" / "processed_faces" / "manifest_ffpp.json"
+                if default_manifest.is_file():
+                    manifest_p = str(default_manifest)
+
             ds = DeepfakeFaceDataset(
                 data_root=args.data_root,
-                manifest_path=args.manifest_path,
+                manifest_path=manifest_p,
                 split="test",
                 compressions=["c23", "c40"],
                 manipulations=[unseen_manip],
@@ -353,18 +438,22 @@ def evaluate_protocol2_cross_manipulation(
             device=device,
             is_phdnet=is_phdnet,
             collect_masks=False,
+            prefetch_factor=getattr(args, "prefetch_factor", 2),
         )
 
+        vids_comp = [f"{v}_{c}" for v, c in zip(inf["video_ids"], inf["compressions"])]
         frame_m = compute_classification_metrics(inf["labels"], inf["probs"])
-        video_m = aggregate_video_metrics(inf["video_ids"], inf["labels"], inf["probs"])
+        video_m = aggregate_video_metrics(vids_comp, inf["labels"], inf["probs"])
+        video_roc = compute_video_roc(vids_comp, inf["labels"], inf["probs"])
 
         results[unseen_manip] = {
             "samples": len(inf["labels"]),
             "frame_metrics": frame_m,
             "video_metrics": video_m,
         }
+        roc_dict[unseen_manip] = video_roc
 
-    return results
+    return results, roc_dict
 
 
 # ==============================================================================
@@ -376,7 +465,7 @@ def evaluate_protocol3_celebdf(
     args: argparse.Namespace,
     device: torch.device,
     is_phdnet: bool,
-) -> Dict[str, Any]:
+) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """Protokol 3: Celeb-DF v2 resmi 518 test videosu üzerinde sıfır-atış değerlendirme."""
     logger.info(">>> PROTOKOL 3: Cross-Dataset (Celeb-DF v2) Değerlendiriliyor...")
 
@@ -423,17 +512,19 @@ def evaluate_protocol3_celebdf(
         device=device,
         is_phdnet=is_phdnet,
         collect_masks=False,
+        prefetch_factor=getattr(args, "prefetch_factor", 2),
     )
 
     frame_m = compute_classification_metrics(inf["labels"], inf["probs"])
     video_m = aggregate_video_metrics(inf["video_ids"], inf["labels"], inf["probs"])
+    video_roc = compute_video_roc(inf["video_ids"], inf["labels"], inf["probs"])
 
     return {
         "videos_in_test_list": sample_count,
         "samples_evaluated": len(inf["labels"]),
         "frame_metrics": frame_m,
         "video_metrics": video_m,
-    }
+    }, video_roc
 
 
 # ==============================================================================
@@ -447,6 +538,19 @@ def run_full_evaluation(args: argparse.Namespace) -> Dict[str, Any]:
         device = torch.device(args.device)
     else:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    if device.type == "cuda":
+        torch.backends.cudnn.benchmark = True
+        if args.batch_size > 64:
+            logger.warning("CUDA değerlendirmesinde batch_size=%d, güvenli GPU VRAM kullanımı için 64 ile sınırlandırıldı.", args.batch_size)
+            args.batch_size = 64
+
+    # 1b. Varsayılan FF++ manifestini belirle
+    if args.manifest_path is None and not args.smoke_test:
+        default_manifest = PROJECT_ROOT / "data" / "processed_faces" / "manifest_ffpp.json"
+        if default_manifest.is_file():
+            args.manifest_path = str(default_manifest)
+            logger.info("Varsayılan FF++ manifesti belirlendi: %s", args.manifest_path)
 
     # 2. Model ve Kontrol Noktası Yükleme
     model_name = args.model
@@ -478,13 +582,13 @@ def run_full_evaluation(args: argparse.Namespace) -> Dict[str, Any]:
     model.eval()
 
     # 3. Protokol 1: Within-Dataset (FF++)
-    proto1 = evaluate_protocol1_ffpp(model, args, device, is_phdnet)
+    proto1, proto1_roc = evaluate_protocol1_ffpp(model, args, device, is_phdnet)
 
     # 4. Protokol 2: Cross-Manipulation
-    proto2 = evaluate_protocol2_cross_manipulation(model, args, device, is_phdnet)
+    proto2, proto2_roc = evaluate_protocol2_cross_manipulation(model, args, device, is_phdnet)
 
     # 5. Protokol 3: Cross-Dataset (Celeb-DF v2)
-    proto3 = evaluate_protocol3_celebdf(model, args, device, is_phdnet)
+    proto3, proto3_roc = evaluate_protocol3_celebdf(model, args, device, is_phdnet)
 
     # 6. Çıkarım Gecikmesi ve Hız Analizi
     logger.info(">>> Çıkarım Gecikmesi ve Hız Benchmark'ı Yapılıyor...")
@@ -510,7 +614,78 @@ def run_full_evaluation(args: argparse.Namespace) -> Dict[str, Any]:
     with open(rep_path, "w", encoding="utf-8") as f:
         json.dump(full_report, f, indent=2)
 
+    # 8b. Ampirik Video-Level ROC Eğrilerini .npz Olarak Kaydet
+    roc_out_path = Path(args.output_roc) if getattr(args, "output_roc", None) else (
+        PROJECT_ROOT / "outputs" / "logs" / f"roc_data_{model_name}_{ablation_mode}.npz"
+    )
+    roc_out_path.parent.mkdir(parents=True, exist_ok=True)
+    np.savez(
+        roc_out_path,
+        # Protocol 1
+        p1_comb_fpr=proto1_roc["combined"]["fpr"],
+        p1_comb_tpr=proto1_roc["combined"]["tpr"],
+        p1_comb_thresholds=proto1_roc["combined"]["thresholds"],
+        p1_comb_auc=proto1_roc["combined"]["auc"],
+        p1_comb_eer=proto1_roc["combined"]["eer"],
+        p1_combined_fpr=proto1_roc["combined"]["fpr"],
+        p1_combined_tpr=proto1_roc["combined"]["tpr"],
+        p1_combined_auc=proto1_roc["combined"]["auc"],
+        p1_combined_eer=proto1_roc["combined"]["eer"],
+
+        p1_c23_fpr=proto1_roc["c23"]["fpr"],
+        p1_c23_tpr=proto1_roc["c23"]["tpr"],
+        p1_c23_thresholds=proto1_roc["c23"]["thresholds"],
+        p1_c23_auc=proto1_roc["c23"]["auc"],
+        p1_c23_eer=proto1_roc["c23"]["eer"],
+
+        p1_c40_fpr=proto1_roc["c40"]["fpr"],
+        p1_c40_tpr=proto1_roc["c40"]["tpr"],
+        p1_c40_thresholds=proto1_roc["c40"]["thresholds"],
+        p1_c40_auc=proto1_roc["c40"]["auc"],
+        p1_c40_eer=proto1_roc["c40"]["eer"],
+
+        # Protocol 2
+        p2_faceshifter_fpr=proto2_roc["FaceShifter"]["fpr"],
+        p2_faceshifter_tpr=proto2_roc["FaceShifter"]["tpr"],
+        p2_faceshifter_thresholds=proto2_roc["FaceShifter"]["thresholds"],
+        p2_faceshifter_auc=proto2_roc["FaceShifter"]["auc"],
+        p2_faceshifter_eer=proto2_roc["FaceShifter"]["eer"],
+        p2_fs_fpr=proto2_roc["FaceShifter"]["fpr"],
+        p2_fs_tpr=proto2_roc["FaceShifter"]["tpr"],
+        p2_fs_auc=proto2_roc["FaceShifter"]["auc"],
+        p2_fs_eer=proto2_roc["FaceShifter"]["eer"],
+
+        p2_dfd_fpr=proto2_roc["DeepFakeDetection"]["fpr"],
+        p2_dfd_tpr=proto2_roc["DeepFakeDetection"]["tpr"],
+        p2_dfd_thresholds=proto2_roc["DeepFakeDetection"]["thresholds"],
+        p2_dfd_auc=proto2_roc["DeepFakeDetection"]["auc"],
+        p2_dfd_eer=proto2_roc["DeepFakeDetection"]["eer"],
+        p2_deepfakedetection_fpr=proto2_roc["DeepFakeDetection"]["fpr"],
+        p2_deepfakedetection_tpr=proto2_roc["DeepFakeDetection"]["tpr"],
+        p2_deepfakedetection_auc=proto2_roc["DeepFakeDetection"]["auc"],
+        p2_deepfakedetection_eer=proto2_roc["DeepFakeDetection"]["eer"],
+
+        # Protocol 3
+        p3_celebdf_fpr=proto3_roc["fpr"],
+        p3_celebdf_tpr=proto3_roc["tpr"],
+        p3_celebdf_thresholds=proto3_roc["thresholds"],
+        p3_celebdf_auc=proto3_roc["auc"],
+        p3_celebdf_eer=proto3_roc["eer"],
+        p3_celeb_fpr=proto3_roc["fpr"],
+        p3_celeb_tpr=proto3_roc["tpr"],
+        p3_celeb_auc=proto3_roc["auc"],
+        p3_celeb_eer=proto3_roc["eer"],
+    )
+    if roc_out_path.name != "roc_data.npz":
+        default_roc = PROJECT_ROOT / "outputs" / "logs" / "roc_data.npz"
+        try:
+            import shutil
+            shutil.copyfile(roc_out_path, default_roc)
+        except Exception:
+            pass
+
     logger.info("Değerlendirme tamamlandı! Tam rapor kaydedildi: %s", rep_path)
+    logger.info("Ampirik Video ROC verisi kaydedildi: %s", roc_out_path)
 
     # 9. Konsol Özet Tablosu
     print("\n" + "=" * 80)
@@ -522,22 +697,24 @@ def run_full_evaluation(args: argparse.Namespace) -> Dict[str, Any]:
     p1_pix = proto1["combined_c23_c40"]["pixel_localization"]
 
     print("\n--- PROTOKOL 1: FF++ Within-Dataset (Video-Level Metrikler) ---")
-    print(f"  Birleşik (c23 + c40) : Video-AUC: {p1_comb['auc']:.4f} | EER: {p1_comb['eer']:.4f} | AP: {p1_comb['ap']:.4f} | F1: {p1_comb['f1']:.4f}")
-    print(f"  c23 (Yüksek Kalite)  : Video-AUC: {p1_c23['auc']:.4f} | EER: {p1_c23['eer']:.4f} | AP: {p1_c23['ap']:.4f}")
-    print(f"  c40 (Ağır Sıkıştırma): Video-AUC: {p1_c40['auc']:.4f} | EER: {p1_c40['eer']:.4f} | AP: {p1_c40['ap']:.4f}")
+    print(f"  Birleşik (c23 + c40) : Video-AUC: {p1_comb['auc']:.4f} | EER: {p1_comb['eer']:.4f} | AP: {p1_comb['ap']:.4f}")
+    print(f"                         Sabit (0.50)  : F1={p1_comb['f1']:.4f} | Acc={p1_comb['accuracy']:.4f}")
+    print(f"                         Optimal ({p1_comb.get('optimal_threshold', 0.5):.2f}): F1={p1_comb.get('opt_f1', p1_comb['f1']):.4f} | Acc={p1_comb.get('opt_accuracy', p1_comb['accuracy']):.4f}")
+    print(f"  c23 (Yüksek Kalite)  : Video-AUC: {p1_c23['auc']:.4f} | EER: {p1_c23['eer']:.4f} | Optimal F1: {p1_c23.get('opt_f1', p1_c23['f1']):.4f} (τ={p1_c23.get('optimal_threshold', 0.5):.2f})")
+    print(f"  c40 (Ağır Sıkıştırma): Video-AUC: {p1_c40['auc']:.4f} | EER: {p1_c40['eer']:.4f} | Optimal F1: {p1_c40.get('opt_f1', p1_c40['f1']):.4f} (τ={p1_c40.get('optimal_threshold', 0.5):.2f})")
     if p1_pix.get("dice") is not None:
         print(f"  Piksel Yerelleştirme : Dice Skoru: {p1_pix['dice']:.4f} | IoU: {p1_pix['iou']:.4f}")
 
     print("\n--- PROTOKOL 2: Cross-Manipulation (Sıfır-Atış Video-Level) ---")
     for k, v in proto2.items():
         vm = v["video_metrics"]
-        print(f"  {k:<18} : Video-AUC: {vm['auc']:.4f} | EER: {vm['eer']:.4f} | AP: {vm['ap']:.4f}")
+        print(f"  {k:<18} : Video-AUC: {vm['auc']:.4f} | EER: {vm['eer']:.4f} | Sabit F1: {vm['f1']:.4f} | Optimal F1: {vm.get('opt_f1', vm['f1']):.4f} (τ={vm.get('optimal_threshold', 0.5):.2f})")
 
     print("\n--- PROTOKOL 3: Celeb-DF v2 Cross-Dataset (Sıfır-Atış) ---")
     p3_vid = proto3["video_metrics"]
     p3_frame = proto3["frame_metrics"]
-    print(f"  Celeb-DF Video-Level : Video-AUC: {p3_vid['auc']:.4f} | EER: {p3_vid['eer']:.4f} | AP: {p3_vid['ap']:.4f}")
-    print(f"  Celeb-DF Frame-Level : Kare-AUC : {p3_frame['auc']:.4f} | EER: {p3_frame['eer']:.4f}")
+    print(f"  Celeb-DF Video-Level : Video-AUC: {p3_vid['auc']:.4f} | EER: {p3_vid['eer']:.4f} | Sabit F1: {p3_vid['f1']:.4f} | Optimal F1: {p3_vid.get('opt_f1', p3_vid['f1']):.4f} (τ={p3_vid.get('optimal_threshold', 0.5):.2f})")
+    print(f"  Celeb-DF Frame-Level : Kare-AUC : {p3_frame['auc']:.4f} | EER: {p3_frame['eer']:.4f} | Optimal F1: {p3_frame.get('opt_f1', p3_frame['f1']):.4f}")
 
     print("\n--- ÇIKARIM HIZI VE GECİKME ---")
     for mode_name, m_res in speed_rep.items():
@@ -572,15 +749,19 @@ def parse_args(raw_args: Optional[List[str]] = None) -> argparse.Namespace:
                         help="Celeb-DF v2 veri seti kök dizini")
     parser.add_argument("--celebdf_test_list", type=str, default=None,
                         help="Celeb-DF resmi test listesi dosyası (List_of_testing_videos.txt)")
-    parser.add_argument("--batch_size", type=int, default=32,
+    parser.add_argument("--batch_size", type=int, default=64,
                         help="Değerlendirme batch boyutu")
     parser.add_argument("--num_workers", type=int, default=4,
                         help="DataLoader iş parçacığı sayısı")
+    parser.add_argument("--prefetch_factor", type=int, default=2,
+                        help="DataLoader prefetch katsayısı")
     parser.add_argument("--device", type=str, default=None,
                         help="Değerlendirme cihazı (cuda, cpu vb.)")
     parser.add_argument("--output_report", type=str,
                         default=str(PROJECT_ROOT / "outputs" / "logs" / "evaluation_report.json"),
                         help="Çıktı JSON raporunun kaydedileceği dosya yolu")
+    parser.add_argument("--output_roc", type=str, default=None,
+                        help="Video ROC eğrisi verisinin (.npz) kaydedileceği dosya yolu")
     parser.add_argument("--seed", type=int, default=42,
                         help="Rastgelelik tohumu")
 

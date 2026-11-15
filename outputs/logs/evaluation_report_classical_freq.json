@@ -1,0 +1,171 @@
+{
+  "timestamp": "2026-11-14 17:37:05",
+  "model": "phdnet",
+  "ablation": "classical_freq",
+  "smoke_test": false,
+  "device": "cuda",
+  "checkpoint_info": {
+    "checkpoint_path": "outputs/checkpoints/best_phdnet_classical_freq.pt",
+    "trained_epoch": 7,
+    "best_train_video_auc": 0.9755
+  },
+  "protocol_1_within_dataset_ffpp": {
+    "samples_evaluated": 24957,
+    "combined_c23_c40": {
+      "frame_metrics": {
+        "auc": 0.9274,
+        "eer": 0.1508,
+        "ap": 0.9637,
+        "f1": 0.8824,
+        "accuracy": 0.849,
+        "optimal_threshold": 0.5729,
+        "opt_f1": 0.8778,
+        "opt_accuracy": 0.8454
+      },
+      "video_metrics": {
+        "auc": 0.9758,
+        "eer": 0.0645,
+        "ap": 0.9717,
+        "f1": 0.9396,
+        "accuracy": 0.9373,
+        "optimal_threshold": 0.5608,
+        "opt_f1": 0.947,
+        "opt_accuracy": 0.9462
+      },
+      "pixel_localization": {
+        "dice": 0.8019,
+        "iou": 0.7433
+      }
+    },
+    "compression_c23": {
+      "frame_metrics": {
+        "auc": 0.9554,
+        "eer": 0.1103,
+        "ap": 0.9778,
+        "f1": 0.9139,
+        "accuracy": 0.8885,
+        "optimal_threshold": 0.5839,
+        "opt_f1": 0.9126,
+        "opt_accuracy": 0.8878
+      },
+      "video_metrics": {
+        "auc": 0.9836,
+        "eer": 0.0432,
+        "ap": 0.9818,
+        "f1": 0.955,
+        "accuracy": 0.9532,
+        "optimal_threshold": 0.5742,
+        "opt_f1": 0.9574,
+        "opt_accuracy": 0.9568
+      }
+    },
+    "compression_c40": {
+      "frame_metrics": {
+        "auc": 0.8915,
+        "eer": 0.1901,
+        "ap": 0.9448,
+        "f1": 0.8507,
+        "accuracy": 0.8099,
+        "optimal_threshold": 0.5729,
+        "opt_f1": 0.842,
+        "opt_accuracy": 0.803
+      },
+      "video_metrics": {
+        "auc": 0.9669,
+        "eer": 0.0786,
+        "ap": 0.9587,
+        "f1": 0.9241,
+        "accuracy": 0.9214,
+        "optimal_threshold": 0.5608,
+        "opt_f1": 0.9366,
+        "opt_accuracy": 0.9357
+      }
+    }
+  },
+  "protocol_2_cross_manipulation": {
+    "FaceShifter": {
+      "samples": 10352,
+      "frame_metrics": {
+        "auc": 0.7653,
+        "eer": 0.3115,
+        "ap": 0.4625,
+        "f1": 0.4745,
+        "accuracy": 0.78,
+        "optimal_threshold": 0.1213,
+        "opt_f1": 0.4668,
+        "opt_accuracy": 0.659
+      },
+      "video_metrics": {
+        "auc": 0.789,
+        "eer": 0.2844,
+        "ap": 0.7966,
+        "f1": 0.6193,
+        "accuracy": 0.6993,
+        "optimal_threshold": 0.4023,
+        "opt_f1": 0.6846,
+        "opt_accuracy": 0.7246
+      }
+    },
+    "DeepFakeDetection": {
+      "samples": 24743,
+      "frame_metrics": {
+        "auc": 0.7029,
+        "eer": 0.3582,
+        "ap": 0.2243,
+        "f1": 0.2176,
+        "accuracy": 0.5225,
+        "optimal_threshold": 0.8784,
+        "opt_f1": 0.2584,
+        "opt_accuracy": 0.7193
+      },
+      "video_metrics": {
+        "auc": 0.7348,
+        "eer": 0.3219,
+        "ap": 0.5915,
+        "f1": 0.4965,
+        "accuracy": 0.5706,
+        "optimal_threshold": 0.7068,
+        "opt_f1": 0.5561,
+        "opt_accuracy": 0.7048
+      }
+    }
+  },
+  "protocol_3_cross_dataset_celebdf": {
+    "videos_in_test_list": 518,
+    "samples_evaluated": 7993,
+    "frame_metrics": {
+      "auc": 0.8116,
+      "eer": 0.2738,
+      "ap": 0.8783,
+      "f1": 0.8075,
+      "accuracy": 0.7499,
+      "optimal_threshold": 0.5639,
+      "opt_f1": 0.7956,
+      "opt_accuracy": 0.7419
+    },
+    "video_metrics": {
+      "auc": 0.8636,
+      "eer": 0.2141,
+      "ap": 0.9164,
+      "f1": 0.8446,
+      "accuracy": 0.7954,
+      "optimal_threshold": 0.5909,
+      "opt_f1": 0.8287,
+      "opt_accuracy": 0.7876
+    }
+  },
+  "inference_speed_benchmark": {
+    "fast_detection_no_mask": {
+      "median_ms": 15.18,
+      "mean_ms": 15.31,
+      "p95_ms": 17.51,
+      "fps": 65.9
+    },
+    "forensic_localization_with_mask": {
+      "median_ms": 16.39,
+      "mean_ms": 16.11,
+      "p95_ms": 17.7,
+      "fps": 61.0
+    }
+  }
+}

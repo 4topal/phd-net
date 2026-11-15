@@ -1,0 +1,67 @@
+{
+  "model": "phdnet",
+  "ablation": "full",
+  "best_video_auc": 1.0,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.774,
+      "train_bce": 0.6914,
+      "train_ccm": 0.7276,
+      "train_dice": 0.7188,
+      "val_loss": 2.0384,
+      "frame_metrics": {
+        "auc": 0.7681,
+        "eer": 0.3125,
+        "ap": 0.836,
+        "f1": 0.6667,
+        "accuracy": 0.5,
+        "optimal_threshold": 0.5079,
+        "opt_f1": 0.6939,
+        "opt_accuracy": 0.7656
+      },
+      "video_metrics": {
+        "auc": 1.0,
+        "eer": 0.0,
+        "ap": 1.0,
+        "f1": 0.6667,
+        "accuracy": 0.5,
+        "optimal_threshold": 0.5073,
+        "opt_f1": 1.0,
+        "opt_accuracy": 1.0
+      },
+      "lr": 0.00018749999999999998,
+      "duration_sec": 23.61
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.7134,
+      "train_bce": 0.6887,
+      "train_ccm": 0.6429,
+      "train_dice": 0.7032,
+      "val_loss": 2.024,
+      "frame_metrics": {
+        "auc": 0.7534,
+        "eer": 0.2969,
+        "ap": 0.8346,
+        "f1": 0.6667,
+        "accuracy": 0.5,
+        "optimal_threshold": 0.5043,
+        "opt_f1": 0.7407,
+        "opt_accuracy": 0.7812
+      },
+      "video_metrics": {
+        "auc": 1.0,
+        "eer": 0.0,
+        "ap": 1.0,
+        "f1": 0.6667,
+        "accuracy": 0.5,
+        "optimal_threshold": 0.5044,
+        "opt_f1": 1.0,
+        "opt_accuracy": 1.0
+      },
+      "lr": 0.0003,
+      "duration_sec": 4.56
+    }
+  ]
+}
